@@ -21,10 +21,10 @@
 # MA 02111-1307 USA
 #
 
-BIN_FILES	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX)
+BIN_FILES	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX) mkpollinux$(SFX)
 
 OBJ_LINKS	= environment.o crc32.o
-OBJ_FILES	= img2srec.o mkimage.o envcrc.o gen_eth_addr.o bmp_logo.o
+OBJ_FILES	= img2srec.o mkimage.o envcrc.o gen_eth_addr.o bmp_logo.o mkpollinux.o
 
 ifeq ($(ARCH),mips)
 BIN_FILES	+= inca-swap-bytes$(SFX)
@@ -150,6 +150,10 @@ $(obj)bmp_logo$(SFX):	$(obj)bmp_logo.o
 		$(STRIP) $@
 
 $(obj)inca-swap-bytes$(SFX):	$(obj)inca-swap-bytes.o
+		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
+		$(STRIP) $@
+
+$(obj)mkpollinux$(SFX):    $(obj)mkpollinux.o
 		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
 		$(STRIP) $@
 
