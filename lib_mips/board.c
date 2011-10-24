@@ -43,7 +43,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 extern int timer_init(void);
 
+#ifdef CONFIG_INCA_IP
 extern int incaip_set_cpuclk(void);
+#endif
 
 extern ulong uboot_end_data;
 extern ulong uboot_end;
@@ -114,12 +116,6 @@ static int display_banner(void)
 
 	printf ("\n\n%s\n\n", version_string);
 	return (0);
-}
-
-static void display_flash_config(ulong size)
-{
-	puts ("Flash: ");
-	print_size (size, "\n");
 }
 
 
@@ -296,7 +292,6 @@ void board_init_f(ulong bootflag)
 void board_init_r (gd_t *id, ulong dest_addr)
 {
 	cmd_tbl_t *cmdtp;
-	ulong size;
 	extern void malloc_bin_reloc (void);
 #ifndef CFG_ENV_IS_NOWHERE
 	extern char * env_name_spec;
@@ -306,6 +301,8 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	int i;
 
 	gd = id;
+	bd = gd->bd;
+
 	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
 
 	debug ("Now running in RAM - U-Boot at: %08lx\n", dest_addr);
@@ -347,18 +344,18 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	env_name_spec += gd->reloc_off;
 #endif
 
-	/* configure available FLASH banks */
-	size = flash_init();
-	display_flash_config (size);
-
-	bd = gd->bd;
+#ifdef CFG_FLASH_BASE
+	/* configure available NOR FLASH banks */
+	puts ("Flash: ");
+	bd->bi_flashsize = flash_init();
 	bd->bi_flashstart = CFG_FLASH_BASE;
-	bd->bi_flashsize = size;
 #if CFG_MONITOR_BASE == CFG_FLASH_BASE
 	bd->bi_flashoffset = monitor_flash_len;	/* reserved area for U-Boot */
 #else
 	bd->bi_flashoffset = 0;
 #endif
+	print_size (bd->bi_flashsize, "\n");
+#endif /* CFG_FLASH_BASE */
 
 	/* initialize malloc() area */
 	mem_malloc_init();

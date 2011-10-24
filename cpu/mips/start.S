@@ -29,11 +29,13 @@
 #include <asm/mipsregs.h>
 
 
-#define RVECENT(f,n) \
-   b f; nop
-#define XVECENT(f,bev) \
-   b f     ;           \
-   li k0,bev
+#define RVECENT(f,n)	\
+	b	f;	\
+	nop
+
+#define XVECENT(f,bev)	\
+	b	f;	\
+	li	k0, bev
 
 	.set noreorder
 
@@ -226,10 +228,6 @@ reset:
 	/* CAUSE register */
 	mtc0	zero, CP0_CAUSE
 
-	/* Init Timer */
-	mtc0	zero, CP0_COUNT
-	mtc0	zero, CP0_COMPARE
-
 	/* CONFIG0 register */
 	li	t0, CONF_CM_UNCACHED
 	mtc0	t0, CP0_CONFIG
@@ -266,7 +264,18 @@ reset:
 
 	/* ... and enable them.
 	 */
+#ifdef CONFIG_MIPS_CPU_PR4450
+	/* Due to wonky, non-generic cache initialisation
+	 * the PR4450's cache is not initialised properly,
+	 * so we _can_ run in cached alias segment, yet
+	 * not cached.
+	 * We're currently working on a generic MIPS
+	 * cache initialisation. Expect a patch soon.
+	 */
+	li	t0, CONF_CM_UNCACHED
+#else
 	li	t0, CONF_CM_CACHABLE_NONCOHERENT
+#endif /* CONFIG_MIPS_CPU_PR4450 */
 	mtc0	t0, CP0_CONFIG
 
 
@@ -384,7 +393,9 @@ in_ram:
 	/* Exception handlers.
 	 */
 romReserved:
-	b romReserved
+	b	romReserved
+	nop
 
 romExcHandle:
-	b romExcHandle
+	b	romExcHandle
+	nop

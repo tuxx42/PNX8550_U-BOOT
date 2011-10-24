@@ -1,6 +1,8 @@
 #
 # (C) Copyright 2003
-# Wolfgang Denk, DENX Software Engineering, <wd@denx.de>
+# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+# (C) Copyright 2006
+# Philips Semiconductors B.V.
 #
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -20,23 +22,17 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 # MA 02111-1307 USA
 #
-v=$(shell \
-$(CROSS_COMPILE)as --version|grep "GNU assembler"|awk '{print $$3}'|awk -F . '{print $$2}')
-MIPSFLAGS=$(shell \
-if [ "$v" -lt "14" ]; then \
-	echo "-mcpu=4kc"; \
-else \
-	echo "-march=4kc -mtune=4kc"; \
-fi)
 
-ifneq (,$(findstring 4KCle,$(CROSS_COMPILE)))
-BIG_ENDIAN = n
-ENDIANNESS = -EL
-else
-BIG_ENDIAN = y
-ENDIANNESS = -EB
-endif
+#
+# Philips Consumer Electronics developed board for PNX8550
+#
 
-MIPSFLAGS += $(ENDIANNESS) -mabicalls
-
-PLATFORM_CPPFLAGS += $(MIPSFLAGS)
+#  Text base should eiter be 0x80000000 for cached memory
+#  or 0xA0000000 for uncached memory to properly locate the
+#  the exeception table because it's not relocated at runtime.
+#  However, EJTAG debuggers usually require an interrupt
+#  vector and some memory space for their CPU control code.
+#  Since U-Boot doens't actually use any exceptions, an
+#  offset may be added to satisfy the debugger's needs.
+#  Beware: exceptions aren't trapped if an offset is used!
+TEXT_BASE = 0xA0010000 # Use offset of 0x10000

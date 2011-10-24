@@ -13,10 +13,6 @@
 #ifndef _ASM_MIPSREGS_H
 #define _ASM_MIPSREGS_H
 
-#if 0
-#include <linux/linkage.h>
-#endif
-
 /*
  * The following macros are especially useful for __asm__
  * inline assembler.
@@ -61,6 +57,16 @@
 #define CP0_TAGLO $28
 #define CP0_TAGHI $29
 #define CP0_ERROREPC $30
+
+/* PR4450 specific */
+#ifdef CONFIG_MIPS_CPU_PR4450
+#define CP0_CMEM0		$22
+#define CP0_CMEM1		$22
+#define CP0_CMEM2		$22
+#define CP0_CMEM3		$22
+
+#define CP0_CMEMx__ENABLE	0x00000001
+#endif /* CONFIG_MIPS_CPU_PR4450 */
 
 /*
  * R4640/R4650 cp0 register names.  These registers are listed
@@ -245,6 +251,42 @@
 		".set noreorder\n\t"                            \
 		"tlbwi\n\t"                                     \
 ".set reorder")
+
+/* PR4450 specific */
+#ifdef CONFIG_MIPS_CPU_PR4450
+#define read_c0_configPR()	__read_32bit_c0_register($16, 7)
+#define write_c0_configPR(val)	__write_32bit_c0_register($16, 7, val)
+
+#define __read_32bit_c0_register(source, sel)			\
+({ int __res;							\
+	if (sel == 0)						\
+		__asm__ __volatile__(				\
+			"mfc0\t%0, " #source "\n\t"		\
+			: "=r" (__res));			\
+	else							\
+		__asm__ __volatile__(				\
+			".set\tmips32\n\t"			\
+			"mfc0\t%0, " #source ", " #sel "\n\t"	\
+			".set\tmips0\n\t"			\
+			: "=r" (__res));			\
+			__res;					\
+})
+
+#define __write_32bit_c0_register(register, sel, value)	\
+do {								\
+	if (sel == 0)						\
+		__asm__ __volatile__(				\
+			"mtc0\t%z0, " #register "\n\t"		\
+			: : "Jr" (value));			\
+	else							\
+		__asm__ __volatile__(				\
+			".set\tmips32\n\t"			\
+			"mtc0\t%z0, " #register ", " #sel "\n\t"\
+			".set\tmips0"				\
+			: : "Jr" (value));			\
+} while (0)
+#endif /* CONFIG_MIPS_CPU_PR4450 */
+
 
 /*
  * R4x00 interrupt enable / cause bits

@@ -447,4 +447,18 @@ extern void (*_dma_cache_inv)(unsigned long start, unsigned long size);
 #define dma_cache_wback(start,size)	_dma_cache_wback(start,size)
 #define dma_cache_inv(start,size)	_dma_cache_inv(start,size)
 
+/*
+ * XXX: MIPS doesn't provide in_le32 etc functions. The externs
+ *      supplied here are just satisfying pci_indirect.c.
+ *	Some rework of pci_indirect.c may be required for indirect
+ *	PCI bridge support on both big and little endian MIPS targets.
+ */
+extern unsigned char	in_8     (volatile  u8 *addr);
+extern unsigned short	in_le16  (volatile u16 *addr);
+extern unsigned		in_le32  (volatile u32 *addr);
+extern void		out_8    (volatile  u8 *addr, char val);
+extern void		out_le16 (volatile u16 *addr, unsigned short val);
+extern void		out_le32 (volatile u32 *addr, unsigned int val);
+
+
 #endif /* _ASM_IO_H */

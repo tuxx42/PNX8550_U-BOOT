@@ -33,7 +33,7 @@
 
 #ifndef	CPU_CLOCK_RATE
 /* allowed values: 100000000, 133000000, and 150000000 */
-#define CPU_CLOCK_RATE	150000000	/* default: 150 MHz clock for the MIPS core */
+#define CPU_CLOCK_RATE		150000000	/* default: 150 MHz clock for the MIPS core */
 #endif
 
 #define INFINEON_EBU_BOOTCFG	0x40C4	/* CMULT = 8 */
@@ -104,7 +104,8 @@
 
 #define CFG_BOOTPARAMS_LEN	128*1024
 
-#define CFG_HZ			(incaip_get_cpuclk() / 2)
+#define CFG_CP0_COUNT_RATE	(incaip_get_cpuclk() / 2)
+#define CFG_HZ			1000
 
 #define CFG_SDRAM_BASE		0x80000000
 

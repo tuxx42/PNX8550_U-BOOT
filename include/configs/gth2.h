@@ -93,7 +93,8 @@
 
 #define CFG_MHZ			500
 
-#define CFG_HZ			(CFG_MHZ * 1000000) /* FIXME causes overflow in net.c */
+#define CFG_CP0_COUNT_RATE	(CFG_MHZ * 1000000)
+#define CFG_HZ			1000
 
 #define CFG_SDRAM_BASE		0x80000000     /* Cached addr */
 

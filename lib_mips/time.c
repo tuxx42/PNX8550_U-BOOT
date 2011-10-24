@@ -22,62 +22,56 @@
  */
 
 #include <common.h>
+#include <asm/mipsregs.h>
 
-
-static inline void mips_compare_set(u32 v)
-{
-	asm volatile ("mtc0 %0, $11" : : "r" (v));
-}
-
-static inline void mips_count_set(u32 v)
-{
-	asm volatile ("mtc0 %0, $9" : : "r" (v));
-}
-
-
-static inline u32 mips_count_get(void)
-{
-	u32 count;
-
-	asm volatile ("mfc0 %0, $9" : "=r" (count) :);
-	return count;
-}
+#define TICKS_PER_USEC		1000000
 
 /*
  * timer without interrupts
  */
-
 int timer_init(void)
 {
-	mips_compare_set(0);
-	mips_count_set(0);
+#ifdef CONFIG_MIPS_CPU_PR4450
+	int configPR;
+
+	/* enable and start counter */
+	configPR = read_c0_configPR();
+	configPR &= ~0x8;
+	write_c0_configPR(configPR);
+
+#endif /* CONFIG_MIPS_CPU_PR4450 */
+
+	write_32bit_cp0_register(CP0_COUNT, 0);
+	write_32bit_cp0_register(CP0_COMPARE, ~0);
 
 	return 0;
 }
 
-void reset_timer(void)
-{
-	mips_count_set(0);
-}
-
 ulong get_timer(ulong base)
 {
-	return mips_count_get() - base;
-}
-
-void set_timer(ulong t)
-{
-	mips_count_set(t);
+	return (read_32bit_cp0_register(CP0_COUNT)/(CFG_CP0_COUNT_RATE/CFG_HZ)) - base;
 }
 
 void udelay (unsigned long usec)
 {
-	ulong tmo;
-	ulong start = get_timer(0);
+	ulong startTicks = read_32bit_cp0_register(CP0_COUNT);
+	ulong delayTicks = usec*(CFG_CP0_COUNT_RATE/TICKS_PER_USEC);
+	ulong endTicks;
 
-	tmo = usec * (CFG_HZ / 1000000);
-	while ((ulong)((mips_count_get() - start)) < tmo)
-		/*NOP*/;
+	/* Safeguard for too-long delays */
+	if (delayTicks >= 0x80000000)
+		delayTicks = 0x7FFFFFFF;
+
+	/* Calculate end of delay (once) */
+	endTicks = startTicks + delayTicks;
+
+	/* If end of delay is behind COUNT rol-over, wait for COUNT to rol-over first */
+	while ((read_32bit_cp0_register(CP0_COUNT) & 0x80000000) > (endTicks & 0x80000000))
+		; /* nop */
+
+	/* Wait for end of delay */
+	while (read_32bit_cp0_register(CP0_COUNT) < endTicks)
+		; /* nop */
 }
 
 /*
@@ -86,7 +80,7 @@ void udelay (unsigned long usec)
  */
 unsigned long long get_ticks(void)
 {
-	return mips_count_get();
+	return read_32bit_cp0_register(CP0_COUNT);
 }
 
 /*
@@ -95,5 +89,5 @@ unsigned long long get_ticks(void)
  */
 ulong get_tbclk(void)
 {
-	return CFG_HZ;
+	return CFG_CP0_COUNT_RATE;
 }

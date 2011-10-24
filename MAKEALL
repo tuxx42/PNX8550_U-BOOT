@@ -236,7 +236,7 @@ LIST_arm="	\
 ## MIPS Systems		(default = big endian)
 #########################################################################
 
-LIST_mips4kc="incaip"
+LIST_mips4kc="incaip silverbox"
 
 LIST_mips5kc="purple"
 
@@ -248,7 +248,7 @@ LIST_mips="${LIST_mips4kc} ${LIST_mips5kc} ${LIST_au1xx0}"
 ## MIPS Systems		(little endian)
 #########################################################################
 
-LIST_mips4kc_el=""
+LIST_mips4kc_el="silverbox"
 
 LIST_mips5kc_el=""
 

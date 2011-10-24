@@ -121,6 +121,8 @@ endif
 
 ifeq ($(BIG_ENDIAN),y)
 EX_LDFLAGS += -EB
+else
+EX_LDFLAGS += -EL
 endif
 
 COBJS	:= $(SREC:.srec=.o)

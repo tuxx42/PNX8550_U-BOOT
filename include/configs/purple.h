@@ -31,8 +31,8 @@
 #define CONFIG_MIPS32		1	/* MIPS 5Kc CPU core	*/
 #define CONFIG_PURPLE		1	/* on a PURPLE Board	*/
 
-#define CPU_CLOCK_RATE	125000000   /* 125 MHz clock for the MIPS core */
-#define ASC_CLOCK_RATE	 62500000   /* 62.5 MHz ASC clock              */
+#define CPU_CLOCK_RATE		125000000   /* 125 MHz clock for the MIPS core */
+#define ASC_CLOCK_RATE		62500000   /* 62.5 MHz ASC clock              */
 
 #define INFINEON_EBU_BOOTCFG	0xE0CC
 
@@ -99,7 +99,8 @@
 #define	CFG_PROMPT		"PURPLE # "	/* Monitor Command Prompt    */
 #define	CFG_CBSIZE		256		/* Console I/O Buffer Size   */
 #define	CFG_PBSIZE (CFG_CBSIZE+sizeof(CFG_PROMPT)+16)  /* Print Buffer Size */
-#define CFG_HZ			(CPU_CLOCK_RATE/2)
+#define CFG_CP0_COUNT_RATE	(CPU_CLOCK_RATE/2)
+#define CFG_HZ			1000
 #define	CFG_MAXARGS		16		/* max number of command args*/
 
 #define	CFG_LOAD_ADDR		0x80500000	/* default load address	*/

@@ -25,6 +25,10 @@
 #include <command.h>
 #include <asm/inca-ip.h>
 #include <asm/mipsregs.h>
+#ifdef CONFIG_SILVERBOX
+#  include <asm/io.h>
+#  include <nxp_reset_ip0123.h>
+#endif /* CONFIG_SILVERBOX */
 
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
@@ -32,8 +36,9 @@ int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	*INCA_IP_WDT_RST_REQ = 0x3f;
 #elif defined(CONFIG_PURPLE) || defined(CONFIG_TB0229)
 	void (*f)(void) = (void *) 0xbfc00000;
-
 	f();
+#elif defined(CONFIG_SILVERBOX)
+	writel(IP0123_RST_CTL__DO_SW_RST, IP0123 + IP0123_RST_CTL);
 #endif
 	fprintf(stderr, "*** reset failed ***\n");
 	return 0;
