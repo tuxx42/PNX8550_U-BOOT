@@ -68,7 +68,8 @@ void pci_init_board (void)
 
 int checkboard (void)
 {
-#ifdef CONFIG_PCI
+#if 0
+//#ifdef CONFIG_PCI
 	int mem_size = initdram(0) / (1024 * 1024);
 	int pci_mem_code;
 

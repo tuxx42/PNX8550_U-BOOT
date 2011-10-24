@@ -35,4 +35,4 @@
 #  Since U-Boot doens't actually use any exceptions, an
 #  offset may be added to satisfy the debugger's needs.
 #  Beware: exceptions aren't trapped if an offset is used!
-TEXT_BASE = 0xA0010000 # Use offset of 0x10000
+TEXT_BASE = 0x80100000 # Use offset of 0x10000

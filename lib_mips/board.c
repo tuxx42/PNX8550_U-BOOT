@@ -194,6 +194,7 @@ void board_init_f(ulong bootflag)
 			hang ();
 		}
 	}
+	printf ("Debug: Init ready!\n");
 
 	/*
 	 * Now that we have DRAM mapped and working, we can

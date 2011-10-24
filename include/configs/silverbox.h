@@ -53,7 +53,7 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS					\
 	"addmisc=setenv bootargs $(bootargs) "				\
-		"console=ttyS0,$(baudrate) "				\
+		"console=ttyS0,38400n8 "				\
 		"panic=1\0"						\
 	""
 
@@ -73,7 +73,7 @@
  * Miscellaneous configurable options
  */
 #define CFG_LONGHELP				/* undef to save memory      */
-#define CFG_PROMPT		"SilverBox # "	/* Monitor Command Prompt    */
+#define CFG_PROMPT		"Pollin PNX8950 # "	/* Monitor Command Prompt    */
 #define CFG_CBSIZE		256		/* Console I/O Buffer Size   */
 #define CFG_PBSIZE		(CFG_CBSIZE + sizeof(CFG_PROMPT) + 16)	/* Print Buffer Size */
 #define CFG_MAXARGS		16		/* max number of command args*/
@@ -97,7 +97,7 @@
 #define CFG_SERIAL_PORT_1	IP0107_1
 #define CFG_SERIAL_PORT_2	IP0107_2
 #define CFG_SERIAL_PORT_3	IP0107_3
-#define CFG_CONSOLE_PORT	CFG_SERIAL_PORT_2
+#define CFG_CONSOLE_PORT	CFG_SERIAL_PORT_1
 #define CFG_IP0107_CLOCK	3692300
 
 /* environment organization */
@@ -111,7 +111,7 @@
 /* Address and size of Primary Environment Sector	*/
 #define CFG_NO_FLASH
 #define CFG_ENV_IS_NOWHERE
-#define CFG_ENV_ADDR		0x0003C000
+#define CFG_ENV_ADDR		0x80104000
 #define CFG_ENV_SIZE		0x00004000
 
 
