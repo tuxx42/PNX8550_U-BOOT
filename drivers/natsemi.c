@@ -306,7 +306,7 @@ natsemi_initialize(bd_t * bis)
 			break;
 		}
 
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_0, &iobase);
+		pci_read_config_dword(devno, PCI_BASE_ADDRESS_1, &iobase);
 		iobase &= ~0x3;	/* bit 1: unused and bit 0: I/O Space Indicator */
 
 		pci_write_config_dword(devno, PCI_COMMAND,
@@ -323,6 +323,12 @@ natsemi_initialize(bd_t * bis)
 		}
 
 		dev = (struct eth_device *) malloc(sizeof *dev);
+		if (!dev) {
+			printf("natsemi: Can not allocate memory\n");
+			break;
+		}
+		memset(dev, 0, sizeof(*dev));
+
 
 		sprintf(dev->name, "dp83815#%d", card_number);
 		dev->iobase = bus_to_phys(iobase);
@@ -369,6 +375,14 @@ natsemi_initialize(bd_t * bis)
 			dev->enetaddr[i*2+1] = eedata >> 7;
 			prev_eedata = eedata;
 		}
+		printf("natsemi: MAC-Address: ");
+		for(i = 0; i < 6; i++) {
+			printf("%X", dev->enetaddr[i]);
+			if(i < 5) {
+				printf("-");
+			}
+		}
+		printf("\n");
 
 		/* Reset the chip to erase any previous misconfiguration. */
 		OUTL(dev, ChipReset, ChipCmd);
@@ -607,13 +621,13 @@ natsemi_reset(struct eth_device *dev)
 	   performance" to be done in sequence.  These settings optimize some
 	   of the 100Mbit autodetection circuitry.  Also, we only want to do
 	   this for rev C of the chip.  */
-	if (INL(dev, SiliconRev) == 0x302) {
+//	if (INL(dev, SiliconRev) == 0x302) {
 		OUTW(dev, 0x0001, PGSEL);
 		OUTW(dev, 0x189C, PMDCSR);
 		OUTW(dev, 0x0000, TSTDAT);
 		OUTW(dev, 0x5040, DSPCFG);
 		OUTW(dev, 0x008C, SDCFG);
-	}
+//	}
 	/* Disable interrupts using the mask. */
 	OUTL(dev, 0, IntrMask);
 	OUTL(dev, 0, IntrEnable);
@@ -721,7 +735,8 @@ natsemi_init_rxd(struct eth_device *dev)
 static void
 natsemi_set_rx_mode(struct eth_device *dev)
 {
-	u32 rx_mode = AcceptBroadcast | AcceptMyPhys;
+//	u32 rx_mode = AcceptBroadcast | AcceptMyPhys;
+	u32 rx_mode = AcceptBroadcast | AcceptAllPhys;
 
 	OUTL(dev, rx_mode, RxFilterAddr);
 }

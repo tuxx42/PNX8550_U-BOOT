@@ -27,6 +27,7 @@
 #include <asm/mipsregs.h>
 #include <asm/addrspace.h>
 #include <nxp_uart_ip0107.h>
+#include <nxp_global2_ip0128.h>
 
 #if defined(CONFIG_PCI)
 #  include <pci.h>
@@ -68,10 +69,12 @@ void pci_init_board (void)
 
 int checkboard (void)
 {
-#if 0
-//#ifdef CONFIG_PCI
+#ifdef CONFIG_PCI
 	int mem_size = initdram(0) / (1024 * 1024);
 	int pci_mem_code;
+	
+	/* clear global 2 register */
+	writel(0, IP0128 | IP0128_ENABLE_INTA_O);
 
 	/* Calc the PCI mem size code */
 	if (mem_size >= 128)
@@ -84,31 +87,31 @@ int checkboard (void)
 		pci_mem_code = IPA051_PCI_SETUP__BASExx_SIZ_16M;
 
 	/* Set PCI_XIO registers */
-	writel(PCIMEM_BASE, IPA051_PCI_BASE1_LO);
-	writel(PCIMEM_BASE + PCIMEM_SIZE + 1, IPA051_PCI_BASE1_HI);
-	writel(PCIIO_BASE, IPA051_PCI_BASE2_LO);
-	writel(PCIIO_BASE + PCIIO_SIZE + 1, IPA051_PCI_BASE2_HI);
+	writel(PCIMEM_BASE, IPA051 | IPA051_PCI_BASE1_LO);
+	writel(PCIMEM_BASE + PCIMEM_SIZE + 1, IPA051 | IPA051_PCI_BASE1_HI);
+	writel(PCIIO_BASE, IPA051 | IPA051_PCI_BASE2_LO);
+	writel(PCIIO_BASE + PCIIO_SIZE + 1, IPA051 | IPA051_PCI_BASE2_HI);
 
 	/* Send memory transaction via PCI_BASE2 */
-	writel(0x00000000, IPA051_PCI_IO);
+	writel(0x00000001, IPA051 | IPA051_PCI_IO);
 
 	/* Unlock the setup register */
-	writel(0xca, IPA051_UNLOCK_REGISTER);
+	writel(0xca, IPA051 | IPA051_UNLOCK_REGISTER);
 
 	/*
 	 * BAR0 of IP A051 (pci base 10) must be zero in order for ide
 	 * to work, and in order for bus_to_baddr to work without any
 	 * hacks.
 	 */
-	writel(0x00000000, IPA051_BASE10);
+	writel(0x00000000, IPA051 | IPA051_BASE10);
 
 	/*
 	 * These two bars are set by default or the boot code.
 	 * However, it's safer to set them here so we're not boot
 	 * code dependent.
 	 */
-	writel(MMIO_BASE, IPA051_BASE14);		/* PNX MMIO */
-	writel(XIO_BASE, IPA051_BASE18);		/* XIO      */
+	writel(MMIO_BASE, IPA051 | IPA051_BASE14);	/* PNX MMIO */
+	writel(XIO_BASE, IPA051 |  IPA051_BASE18);	/* XIO      */
 
 	writel( IPA051_PCI_SETUP__EN_TA |
 		IPA051_PCI_SETUP__EN_PCI2MMI |
@@ -120,9 +123,9 @@ int checkboard (void)
 		IPA051_PCI_SETUP__BASE10_SIZ(pci_mem_code) |
 		IPA051_PCI_SETUP__EN_CONFIG_MANAG |
 		IPA051_PCI_SETUP__EN_PCI_ARB,		/* Enable PCI arbiter */
-		IPA051_PCI_SETUP );			/* PCI_SETUP */
+		IPA051 | IPA051_PCI_SETUP );		/* PCI_SETUP */
 
-	writel(0x00000000, IPA051_PCI_CONTROL);		/* PCI_CONTROL */
+	writel(0x00000000, IPA051 + IPA051_PCI_CONTROL);	/* PCI_CONTROL */
 #else
 	initdram(0);
 #endif /* CONFIG_PCI */

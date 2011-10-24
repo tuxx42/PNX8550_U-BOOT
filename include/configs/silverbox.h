@@ -51,20 +51,23 @@
 #define CONFIG_TIMESTAMP		/* Print image info with timestamp */
 #undef	CONFIG_BOOTARGS
 
+/*
 #define CONFIG_EXTRA_ENV_SETTINGS					\
 	"addmisc=setenv bootargs $(bootargs) "				\
 		"console=ttyS0,38400n8 "				\
 		"panic=1\0"						\
 	""
+*/
 
-#define CONFIG_BOOTCOMMAND	""
+#define CONFIG_BOOTCOMMAND	"loadb 0x80100000;sleep 5;go 0x80100000"
 
 #define CONFIG_COMMANDS	      (	(CONFIG_CMD_DFL		|\
-				 CFG_CMD_DHCP		|\
 				 CFG_CMD_PCI		|\
 				 CFG_CMD_ELF		|\
 				 CFG_CMD_I2C		|\
+				 CFG_CMD_MEMORY		|\
 				 CFG_CMD_EEPROM		|\
+				 CFG_CMD_NET            |\
 				 CFG_CMD_PING)		&\
  				~(CFG_CMD_ENV | CFG_CMD_FLASH | CFG_CMD_IMLS ) )
 #include <cmd_confdefs.h>
@@ -73,7 +76,7 @@
  * Miscellaneous configurable options
  */
 #define CFG_LONGHELP				/* undef to save memory      */
-#define CFG_PROMPT		"Pollin PNX8950 # "	/* Monitor Command Prompt    */
+#define CFG_PROMPT		"# "	/* Monitor Command Prompt    */
 #define CFG_CBSIZE		256		/* Console I/O Buffer Size   */
 #define CFG_PBSIZE		(CFG_CBSIZE + sizeof(CFG_PROMPT) + 16)	/* Print Buffer Size */
 #define CFG_MAXARGS		16		/* max number of command args*/
@@ -132,10 +135,12 @@
 /*-----------------------------------------------------------------------
  * Network stuff
  */
-#define CONFIG_RTL8139
+#define CONFIG_NATSEMI
+#define NATSEMI_DEBUG
 #define CONFIG_NET_MULTI
-#define CONFIG_SERVERIP		192.168.1.10		/* IP address of tftp server */
-#define CONFIG_IPADDR		192.168.1.26		/* Our IP address */
+
+#define CONFIG_SERVERIP		192.168.123.16		/* IP address of tftp server */
+#define CONFIG_IPADDR		192.168.123.15		/* Our IP address */
 #define CONFIG_NETMASK		255.255.255.0		/* Our net mask */
 #define CONFIG_BOOTFILE		/vmlinux-sb		/* File to boot */
 #define CONFIG_LOADADDR		0x82000000		/* SDRAM address to load files to */
