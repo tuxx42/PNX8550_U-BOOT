@@ -42,7 +42,7 @@
 
 #define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
 
-#define CONFIG_BAUDRATE		38400
+#define CONFIG_BAUDRATE		115200
 
 /* valid baudrates */
 #define CFG_BAUDRATE_TABLE	{ 50, 75, 110, 134.5, 150, 300, 600, 1200, 2400, \
@@ -130,6 +130,7 @@
  */
 #define CONFIG_PCI
 #define CONFIG_PCI_PNP
+#define CONFIG_PCI_SCAN_SHOW
 #define CONFIG_NXP_PCIXIO_IPA051
 
 /*-----------------------------------------------------------------------

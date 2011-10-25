@@ -62,41 +62,42 @@
 /* defines */
 #define EEPROM_SIZE 0xb /*12 16-bit chunks, or 24 bytes*/
 
-#define DSIZE     0x00000FFF
-#define ETH_ALEN	6
-#define CRC_SIZE  4
-#define TOUT_LOOP   500000
-#define TX_BUF_SIZE    1536
-#define RX_BUF_SIZE    1536
-#define NUM_RX_DESC    4	/* Number of Rx descriptor registers. */
+#define DSIZE			0x00000FFF
+#define ETH_ALEN		6
+#define CRC_SIZE  		4
+#define TOUT_LOOP		500000
+#define TX_BUF_SIZE		1536
+#define RX_BUF_SIZE		1536
+#define NUM_RX_DESC		4	/* Number of Rx descriptor registers. */
 
 /* Offsets to the device registers.
    Unlike software-only systems, device drivers interact with complex hardware.
    It's not useful to define symbolic names for every register bit in the
    device.  */
 enum register_offsets {
-	ChipCmd 	= 0x00,
-	ChipConfig 	= 0x04,
-	EECtrl 		= 0x08,
-	IntrMask 	= 0x14,
-	IntrEnable 	= 0x18,
-	TxRingPtr 	= 0x20,
-	TxConfig 	= 0x24,
-	RxRingPtr 	= 0x30,
-	RxConfig 	= 0x34,
-	ClkRun 		= 0x3C,
+	ChipCmd 		= 0x00,
+	ChipConfig 		= 0x04,
+	EECtrl 			= 0x08,
+	IntrStatus		= 0x10,
+	IntrMask 		= 0x14,
+	IntrEnable 		= 0x18,
+	TxRingPtr 		= 0x20,
+	TxConfig 		= 0x24,
+	RxRingPtr 		= 0x30,
+	RxConfig 		= 0x34,
+	ClkRun 			= 0x3C,
 	RxFilterAddr 	= 0x48,
 	RxFilterData 	= 0x4C,
-	SiliconRev 	= 0x58,
-	PCIPM 		= 0x44,
+	SiliconRev 		= 0x58,
+	PCIPM 			= 0x44,
 	BasicControl	= 0x80,
-	BasicStatus	= 0x84,
+	BasicStatus		= 0x84,
 	/* These are from the spec, around page 78... on a separate table. */
-	PGSEL 		= 0xCC,
-	PMDCSR 		= 0xE4,
-	TSTDAT 		= 0xFC,
-	DSPCFG 		= 0xF4,
-	SDCFG 		= 0x8C
+	PGSEL 			= 0xCC,
+	PMDCSR 			= 0xE4,
+	TSTDAT 			= 0xFC,
+	DSPCFG 			= 0xF4,
+	SDCFG 			= 0x8C
 };
 
 /* Bit in ChipCmd. */
@@ -111,11 +112,11 @@ enum ChipCmdBits {
 };
 
 enum ChipConfigBits {
-	LinkSts 	= 0x80000000,
-	HundSpeed 	= 0x40000000,
-	FullDuplex 	= 0x20000000,
-	TenPolarity	= 0x10000000,
-	AnegDone	= 0x08000000,
+	LinkSts 		= 0x80000000,
+	HundSpeed 		= 0x40000000,
+	FullDuplex	 	= 0x20000000,
+	TenPolarity		= 0x10000000,
+	AnegDone		= 0x08000000,
 	AnegEnBothBoth	= 0x0000E000,
 	AnegDis100Full	= 0x0000C000,
 	AnegEn100Both	= 0x0000A000,
@@ -123,62 +124,63 @@ enum ChipConfigBits {
 	AnegEnBothHalf	= 0x00006000,
 	AnegDis10Full	= 0x00004000,
 	AnegEn10Both	= 0x00002000,
-	DuplexMask	= 0x00008000,
-	SpeedMask	= 0x00004000,
-	AnegMask	= 0x00002000,
+	DuplexMask		= 0x00008000,
+	SpeedMask		= 0x00004000,
+	AnegMask		= 0x00002000,
 	AnegDis10Half	= 0x00000000,
-	ExtPhy 		= 0x00001000,
-	PhyRst 		= 0x00000400,
-	PhyDis 		= 0x00000200,
+	ExtPhy 			= 0x00001000,
+	PhyRst 			= 0x00000400,
+	PhyDis 			= 0x00000200,
 	BootRomDisable	= 0x00000004,
-	BEMode 		= 0x00000001,
+	BEMode 			= 0x00000001,
 };
 
 enum TxConfig_bits {
-	TxDrthMask 	= 0x3f,
-	TxFlthMask 	= 0x3f00,
-	TxMxdmaMask	= 0x700000,
+	TxDrthMask 		= 0x3f,
+	TxFlthMask 		= 0x3f00,
+	TxMxdmaMask		= 0x700000,
 	TxMxdma_512 	= 0x0,
-	TxMxdma_4 	= 0x100000,
-	TxMxdma_8 	= 0x200000,
-	TxMxdma_16 	= 0x300000,
-	TxMxdma_32 	= 0x400000,
-	TxMxdma_64 	= 0x500000,
+	TxMxdma_4 		= 0x100000,
+	TxMxdma_8 		= 0x200000,
+	TxMxdma_16 		= 0x300000,
+	TxMxdma_32 		= 0x400000,
+	TxMxdma_64 		= 0x500000,
 	TxMxdma_128 	= 0x600000,
 	TxMxdma_256 	= 0x700000,
 	TxCollRetry 	= 0x800000,
-	TxAutoPad 	= 0x10000000,
-	TxMacLoop 	= 0x20000000,
-	TxHeartIgn 	= 0x40000000,
+	TxAutoPad 		= 0x10000000,
+	TxMacLoop 		= 0x20000000,
+	TxHeartIgn 		= 0x40000000,
 	TxCarrierIgn 	= 0x80000000
 };
 
 enum RxConfig_bits {
-	RxDrthMask 	= 0x3e,
+	RxDrthMask 		= 0x3e,
 	RxMxdmaMask 	= 0x700000,
 	RxMxdma_512 	= 0x0,
-	RxMxdma_4 	= 0x100000,
-	RxMxdma_8 	= 0x200000,
-	RxMxdma_16 	= 0x300000,
-	RxMxdma_32 	= 0x400000,
-	RxMxdma_64 	= 0x500000,
+	RxMxdma_4 		= 0x100000,
+	RxMxdma_8 		= 0x200000,
+	RxMxdma_16 		= 0x300000,
+	RxMxdma_32 		= 0x400000,
+	RxMxdma_64 		= 0x500000,
 	RxMxdma_128 	= 0x600000,
 	RxMxdma_256 	= 0x700000,
 	RxAcceptLong 	= 0x8000000,
-	RxAcceptTx 	= 0x10000000,
+	RxAcceptTx 		= 0x10000000,
 	RxAcceptRunt 	= 0x40000000,
 	RxAcceptErr 	= 0x80000000
 };
 
 /* Bits in the RxMode register. */
 enum rx_mode_bits {
-	AcceptErr 		= 0x20,
-	AcceptRunt 		= 0x10,
-	AcceptBroadcast 	= 0xC0000000,
+	AcceptErr 			= 0x20,
+	AcceptRunt 			= 0x10,
 	AcceptMulticast 	= 0x00200000,
-	AcceptAllMulticast 	= 0x20000000,
+	AcceptMyPhys 		= 0x08000000,
 	AcceptAllPhys 		= 0x10000000,
-	AcceptMyPhys 		= 0x08000000
+	AcceptAllMulticast 	= 0x20000000,
+	AcceptBroadcast 	= 0x40000000,
+	RxFilterEnable		= 0x80000000,
 };
 
 typedef struct _BufferDesc {
@@ -579,6 +581,7 @@ natsemi_init(struct eth_device *dev, bd_t * bis)
 	 * implementations may have PME set to enable WakeOnLan.
 	 * With PME set the chip will scan incoming packets but
 	 * nothing will be written to memory. */
+	SavedClkRun = INL(dev, ClkRun);
 	OUTL(dev, SavedClkRun & ~0x100, ClkRun);
 
 	natsemi_init_rxfilter(dev);
@@ -672,7 +675,7 @@ natsemi_init_txd(struct eth_device *dev)
 	txd.bufptr = (u32) & txb[0];
 
 	/* load Transmit Descriptor Register */
-	OUTL(dev, (u32) & txd, TxRingPtr);
+	OUTL(dev, phys_to_bus((u32) & txd), TxRingPtr);
 #ifdef NATSEMI_DEBUG
 	printf("natsemi_init_txd: TX descriptor reg loaded with: %#08X\n",
 	       INL(dev, TxRingPtr));
@@ -698,12 +701,12 @@ natsemi_init_rxd(struct eth_device *dev)
 	/* init RX descriptor */
 	for (i = 0; i < NUM_RX_DESC; i++) {
 		rxd[i].link =
-		    cpu_to_le32((i + 1 <
+		    cpu_to_le32(phys_to_bus((i + 1 <
 				 NUM_RX_DESC) ? (u32) & rxd[i +
 							    1] : (u32) &
-				rxd[0]);
+				rxd[0]));
 		rxd[i].cmdsts = cpu_to_le32((u32) RX_BUF_SIZE);
-		rxd[i].bufptr = cpu_to_le32((u32) & rxb[i * RX_BUF_SIZE]);
+		rxd[i].bufptr = cpu_to_le32(phys_to_bus((u32) & rxb[i * RX_BUF_SIZE]));
 #ifdef NATSEMI_DEBUG
 		printf
 		    ("natsemi_init_rxd: rxd[%d]=%p link=%X cmdsts=%lX bufptr=%X\n",
@@ -713,7 +716,7 @@ natsemi_init_rxd(struct eth_device *dev)
 	}
 
 	/* load Receive Descriptor Register */
-	OUTL(dev, (u32) & rxd[0], RxRingPtr);
+	OUTL(dev, phys_to_bus((u32) & rxd[0]), RxRingPtr);
 
 #ifdef NATSEMI_DEBUG
 	printf("natsemi_init_rxd: RX descriptor register loaded with: %X\n",
@@ -735,8 +738,7 @@ natsemi_init_rxd(struct eth_device *dev)
 static void
 natsemi_set_rx_mode(struct eth_device *dev)
 {
-//	u32 rx_mode = AcceptBroadcast | AcceptMyPhys;
-	u32 rx_mode = AcceptBroadcast | AcceptAllPhys;
+	u32 rx_mode = RxFilterEnable | AcceptBroadcast | AcceptMyPhys;
 
 	OUTL(dev, rx_mode, RxFilterAddr);
 }
@@ -841,6 +843,7 @@ natsemi_poll(struct eth_device *dev)
 
 	if (!(rx_status & (u32) DescOwn))
 		return retstat;
+
 #ifdef NATSEMI_DEBUG
 	if (natsemi_debug)
 		printf("natsemi_poll: got a packet: cur_rx:%d, status:%X\n",
@@ -860,7 +863,7 @@ natsemi_poll(struct eth_device *dev)
 
 	/* return the descriptor and buffer to receive ring */
 	rxd[cur_rx].cmdsts = cpu_to_le32(RX_BUF_SIZE);
-	rxd[cur_rx].bufptr = cpu_to_le32((u32) & rxb[cur_rx * RX_BUF_SIZE]);
+	rxd[cur_rx].bufptr = cpu_to_le32(phys_to_bus((u32) & rxb[cur_rx * RX_BUF_SIZE]));
 
 	if (++cur_rx == NUM_RX_DESC)
 		cur_rx = 0;

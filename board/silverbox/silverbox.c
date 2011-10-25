@@ -93,7 +93,7 @@ int checkboard (void)
 	writel(PCIIO_BASE + PCIIO_SIZE + 1, IPA051 | IPA051_PCI_BASE2_HI);
 
 	/* Send memory transaction via PCI_BASE2 */
-	writel(0x00000001, IPA051 | IPA051_PCI_IO);
+	writel(0x00000000, IPA051 | IPA051_PCI_IO);
 
 	/* Unlock the setup register */
 	writel(0xca, IPA051 | IPA051_UNLOCK_REGISTER);

@@ -39,7 +39,7 @@
 #define MMIO_SIZE		0x00200000	/*  2MiB (pwr of 2, 1 MiB minimum) */
 #define PCIMEM_BASE		0x12000000
 #define PCIMEM_SIZE		0x08000000	/* 128MiB (pwr of 2, 1 MiB minimum) */
-#define PCIIO_BASE		0x1C001000	/* reserved legacy I/O space */
+#define PCIIO_BASE		0x1C000000
 #define PCIIO_SIZE		0x02000000	/* 32MiB (pwr of 2, 1 MiB minimum) */
 
 /* MDCS/TDCS busses in MMIO */
