@@ -142,9 +142,10 @@
 #define NAND_MAX_CHIPS		1
 #define CFG_NAND_AUTO
 
-#define CFG_NAND_DEBUG1
+//#define CFG_NAND_DEBUG
 #define CONFIG_MTD_DEBUG
 #define CONFIG_MTD_DEBUG_VERBOSE 1
+#define CONFIG_MTD_NAND_ECC_SMC
 
 /*-----------------------------------------------------------------------
  * Network stuff

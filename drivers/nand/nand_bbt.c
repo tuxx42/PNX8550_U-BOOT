@@ -300,6 +300,9 @@ static void create_bbt (struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_desc
 			}
 		}
 		i += 2;
+		printf(".");
+		if( (i % 160) == 0)
+			printf("\n");
 		from += (1 << this->bbt_erase_shift);
 	}
 }

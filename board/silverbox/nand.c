@@ -41,7 +41,7 @@ Rev Date       Author      Comments
 #define INFO(fmt, arg...)  printk(KERN_INFO DEVNAME ": " fmt "\n", ## arg )
 
 #undef DEBUG
-#ifdef CFG_NAND_DEBUG1
+#ifdef CFG_NAND_DEBUG
 #	define DEBUG(fmt, arg...) printk(KERN_DEBUG DEVNAME "(%s): " fmt "\n", __FUNCTION__, ##  arg )
 #else
 #	define DEBUG( fmt, arg...)
@@ -228,7 +228,7 @@ static void pnx8550_nand_transfer(void *from, void *to, int bytes, int toxio)
     {
         pnx8550_nand_transferDMA(from, to, bytes, toxio);
     }
-    while((readl(IPA051 | IPA051_GPXIO_INT_STATUS) & IPA051_GPXIO_STATUS__GPXIO_XIO_ACK_DONE) == 0);
+    while((readl(IPA051 | IPA051_GPXIO_INT_STATUS) & IPA051_GPXIO_INT__ACK) == 0);
 }
 
 /**
@@ -556,8 +556,11 @@ static void pnx8550_nand_read_buf(struct mtd_info *mtd, u_char * buf, int len)
         NAND_TRANSFER_FROM(addr, transBuf, pageLen);
     }
 
+
     if (oobLen > 0)
     {
+        pnx8550_nand_wait_for_dev_ready();
+
         pnx8550_nand_register_setup(1, 3, 1, 1, is64mb, NAND_CMD_READOOB, 0);
         addr = NAND_ADDR(last_col_addr - mtd->oobblock, last_page_addr);
         NAND_TRANSFER_FROM(addr, transBuf + pageLen, oobLen);
@@ -578,6 +581,8 @@ static void pnx8550_nand_read_buf(struct mtd_info *mtd, u_char * buf, int len)
         last_col_addr -=mtd->oobblock + mtd->oobsize;
         last_page_addr ++;
     }
+
+    pnx8550_nand_wait_for_dev_ready();
 
     return;
 }
@@ -759,6 +764,13 @@ static void pnx8550_nand_register_setup(u_char cmd_no,
     reg_nand |= IPA051_NAND_CTRLS__COMMAND_A(cmd_a);
     reg_nand |= IPA051_NAND_CTRLS__COMMAND_B(cmd_b);
     writel(reg_nand, (IPA051 | IPA051_NAND_CTRLS));
+    __asm__ __volatile__(                   \
+    		".set   push\n\t"               \
+    		".set   noreorder\n\t"          \
+    		".set mips2\n\t"				\
+    		"sync\n\t"                      \
+    		".set   pop"                    \
+			: : : "memory");
 }
 
 
@@ -777,7 +789,7 @@ static inline void pnx8550_nand_wait_for_dev_ready(void)
  */
 static int pnx8550_nand_dev_ready(struct mtd_info *mtd)
 {
-    DEBUG("");
+    //DEBUG("");
     return ((readl(IPA051 | IPA051_XIO_CTRL) & IPA051_XIO_CTRL__XIO_ACK) != 0);
 }
 
