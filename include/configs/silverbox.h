@@ -42,7 +42,7 @@
 
 #define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
 
-#define CONFIG_BAUDRATE		115200
+#define CONFIG_BAUDRATE		38400
 
 /* valid baudrates */
 #define CFG_BAUDRATE_TABLE	{ 50, 75, 110, 134.5, 150, 300, 600, 1200, 2400, \
@@ -51,15 +51,14 @@
 #define CONFIG_TIMESTAMP		/* Print image info with timestamp */
 #undef	CONFIG_BOOTARGS
 
-/*
 #define CONFIG_EXTRA_ENV_SETTINGS					\
 	"addmisc=setenv bootargs $(bootargs) "				\
 		"console=ttyS0,38400n8 "				\
 		"panic=1\0"						\
 	""
-*/
 
-#define CONFIG_BOOTCOMMAND	"loadb 0x80100000;sleep 5;go 0x80100000"
+//#define CONFIG_BOOTCOMMAND	"loadb 0x80100000;sleep 5;go 0x80100000"
+#define CONFIG_BOOTCOMMAND	"tftp;sleep 5;bootelf 0x82000000"
 
 #define CONFIG_COMMANDS	      (	(CONFIG_CMD_DFL		|\
 				 CFG_CMD_PCI		|\
@@ -67,7 +66,8 @@
 				 CFG_CMD_I2C		|\
 				 CFG_CMD_MEMORY		|\
 				 CFG_CMD_EEPROM		|\
-				 CFG_CMD_NET            |\
+				 CFG_CMD_NET		|\
+				 CFG_CMD_NAND		|\
 				 CFG_CMD_PING)		&\
  				~(CFG_CMD_ENV | CFG_CMD_FLASH | CFG_CMD_IMLS ) )
 #include <cmd_confdefs.h>
@@ -134,6 +134,19 @@
 #define CONFIG_NXP_PCIXIO_IPA051
 
 /*-----------------------------------------------------------------------
+ * NAND stuff
+ */
+#define CFG_NAND0_BASE		0x0
+#define CFG_NAND_BASE_LIST	{ CFG_NAND0_BASE }
+#define CFG_MAX_NAND_DEVICE	1	/* Max number of NAND devices */
+#define NAND_MAX_CHIPS		1
+#define CFG_NAND_AUTO
+
+#define CFG_NAND_DEBUG1
+#define CONFIG_MTD_DEBUG
+#define CONFIG_MTD_DEBUG_VERBOSE 1
+
+/*-----------------------------------------------------------------------
  * Network stuff
  */
 #define CONFIG_NATSEMI
@@ -143,8 +156,8 @@
 #define CONFIG_SERVERIP		192.168.123.16		/* IP address of tftp server */
 #define CONFIG_IPADDR		192.168.123.15		/* Our IP address */
 #define CONFIG_NETMASK		255.255.255.0		/* Our net mask */
-#define CONFIG_BOOTFILE		/vmlinux-sb		/* File to boot */
-#define CONFIG_LOADADDR		0x82000000		/* SDRAM address to load files to */
+#define CONFIG_BOOTFILE		vmlinux				/* File to boot */
+#define CONFIG_LOADADDR		0x82000000			/* SDRAM address to load files to */
 
 /*-----------------------------------------------------------------------
  * I2C stuff

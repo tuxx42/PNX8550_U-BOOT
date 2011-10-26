@@ -415,6 +415,11 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	eth_initialize(gd->bd);
 #endif
 
+#if (CONFIG_COMMANDS & CFG_CMD_NAND)
+	puts ("NAND:  ");
+	nand_init();		/* go init the NAND */
+#endif
+
 	/* main_loop() can return to retry autoboot, if so just run it again. */
 	for (;;) {
 		main_loop ();

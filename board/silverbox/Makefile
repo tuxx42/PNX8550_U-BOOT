@@ -25,7 +25,7 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)lib$(BOARD).a
 
-COBJS	= $(BOARD).o
+COBJS	= $(BOARD).o nand.o
 SOBJS	= memsetup.o
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)

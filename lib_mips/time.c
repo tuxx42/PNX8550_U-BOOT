@@ -52,6 +52,12 @@ ulong get_timer(ulong base)
 	return (read_32bit_cp0_register(CP0_COUNT)/(CFG_CP0_COUNT_RATE/CFG_HZ)) - base;
 }
 
+void reset_timer(void)
+{
+	write_32bit_cp0_register(CP0_COUNT, 0);
+	write_32bit_cp0_register(CP0_COMPARE, ~0);
+}
+
 void udelay (unsigned long usec)
 {
 	ulong startTicks = read_32bit_cp0_register(CP0_COUNT);

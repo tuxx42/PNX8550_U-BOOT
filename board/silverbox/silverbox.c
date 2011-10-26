@@ -31,15 +31,8 @@
 
 #if defined(CONFIG_PCI)
 #  include <pci.h>
-#endif /* CONFIG_PCI */
-
-#if defined(CONFIG_XIO)
-#  include <linux/mtd/nand.h>
-#endif /* CONFIG_XIO */
-
-#if defined(CONFIG_PCI) || defined(CONFIG_XIO)
 #  include <nxp_pcixio_ipa051.h>
-#endif /* CONFIG_PCI || CONFIG_XIO */
+#endif /* CONFIG_PCI */
 
 /*
  * The rtl8139 ethernet driver uses inl/outl macros, yet
@@ -132,29 +125,3 @@ int checkboard (void)
 
 	return 0;
 }
-
-#ifdef CONFIG_XIO
-int board_nand_init (struct nand_chip *nand)
-{
-	volatile unsigned long *xioprofile = (volatile unsigned long *)nand->IO_ADDR_R ;
-
-	/* Check if profile 'cntr' is enabled and configured for NAND FLASH */
-	if ( ((*xioprofile & 0x00000001UL) != 0) &&
-		((*xioprofile & 0x00000018UL) == 0x10) ) {
-		unsigned long address ;
-
-		/* Calculate the offset from the profile value */
-		address = ((*xioprofile & 0x08000000UL) >> 23) |
-			  ((*xioprofile & 0x000001E0UL) >> 5 ) ;
-		address *= 0x00800000UL ;
-
-		/* Add the address off XIO aperture */
-		address += *(volatile unsigned long*)IPA051_BASE18 & (unsigned long)0xFFFFFFF0 ;
-
-		nand->IO_ADDR_R = nand->IO_ADDR_W = (void  __iomem *)address ;
-	} else
-		nand->IO_ADDR_R = nand->IO_ADDR_W = NULL ;
-
-	return -1;
-}
-#endif /* CONFIG_XIO */

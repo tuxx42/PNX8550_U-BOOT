@@ -836,6 +836,7 @@ static int nand_wait(struct mtd_info *mtd, struct nand_chip *this, int state)
 static int nand_wait(struct mtd_info *mtd, struct nand_chip *this, int state)
 {
 	unsigned long	timeo;
+	unsigned long time_base;
 
 	if (state == FL_ERASING)
 		timeo = CFG_HZ * 400;
