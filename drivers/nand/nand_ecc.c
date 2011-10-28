@@ -70,7 +70,7 @@ static const u_char nand_ecc_precalc_table[] = {
  * @ecc_code:	buffer for ECC
  */
 int nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
-		       u_char *ecc_code)
+		u_char *ecc_code)
 {
 	uint8_t idx, reg1, reg2, reg3, tmp1, tmp2;
 	int i;
@@ -92,7 +92,7 @@ int nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 	}
 
 	/* Create non-inverted ECC code from line parity */
-	tmp1  = (reg3 & 0x80) >> 0; /* B7 -> B7 */
+	tmp1 = (reg3 & 0x80) >> 0; /* B7 -> B7 */
 	tmp1 |= (reg2 & 0x80) >> 1; /* B7 -> B6 */
 	tmp1 |= (reg3 & 0x40) >> 1; /* B6 -> B5 */
 	tmp1 |= (reg2 & 0x40) >> 2; /* B6 -> B4 */
@@ -101,7 +101,7 @@ int nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 	tmp1 |= (reg3 & 0x10) >> 3; /* B4 -> B1 */
 	tmp1 |= (reg2 & 0x10) >> 4; /* B4 -> B0 */
 
-	tmp2  = (reg3 & 0x08) << 4; /* B3 -> B7 */
+	tmp2 = (reg3 & 0x08) << 4; /* B3 -> B7 */
 	tmp2 |= (reg2 & 0x08) << 3; /* B3 -> B6 */
 	tmp2 |= (reg3 & 0x04) << 3; /* B2 -> B5 */
 	tmp2 |= (reg2 & 0x04) << 2; /* B2 -> B4 */
@@ -128,7 +128,7 @@ static inline int countbits(uint32_t byte)
 	int res = 0;
 
 	for (;byte; byte >>= 1)
-		res += byte & 0x01;
+	res += byte & 0x01;
 	return res;
 }
 
@@ -142,7 +142,7 @@ static inline int countbits(uint32_t byte)
  * Detect and correct a 1 bit error for 256 byte block
  */
 int nand_correct_data(struct mtd_info *mtd, u_char *dat,
-		      u_char *read_ecc, u_char *calc_ecc)
+		u_char *read_ecc, u_char *calc_ecc)
 {
 	uint8_t s0, s1, s2;
 
@@ -156,12 +156,12 @@ int nand_correct_data(struct mtd_info *mtd, u_char *dat,
 	s2 = calc_ecc[2] ^ read_ecc[2];
 #endif
 	if ((s0 | s1 | s2) == 0)
-		return 0;
+	return 0;
 
 	/* Check for a single bit error */
 	if( ((s0 ^ (s0 >> 1)) & 0x55) == 0x55 &&
-	    ((s1 ^ (s1 >> 1)) & 0x55) == 0x55 &&
-	    ((s2 ^ (s2 >> 1)) & 0x54) == 0x54) {
+			((s1 ^ (s1 >> 1)) & 0x55) == 0x55 &&
+			((s2 ^ (s2 >> 1)) & 0x54) == 0x54) {
 
 		uint32_t byteoffs, bitnum;
 
@@ -185,7 +185,7 @@ int nand_correct_data(struct mtd_info *mtd, u_char *dat,
 	}
 
 	if(countbits(s0 | ((uint32_t)s1 << 8) | ((uint32_t)s2 <<16)) == 1)
-		return 1;
+	return 1;
 
 	return -1;
 }

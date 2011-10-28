@@ -51,14 +51,16 @@
 #define CONFIG_TIMESTAMP		/* Print image info with timestamp */
 #undef	CONFIG_BOOTARGS
 
-#define CONFIG_EXTRA_ENV_SETTINGS					\
-	"addmisc=setenv bootargs $(bootargs) "				\
-		"console=ttyS0,38400n8 "				\
-		"panic=1\0"						\
+#define CONFIG_EXTRA_ENV_SETTINGS												\
+	"nfsargs=setenv bootargs root=/dev/nfs rw "									\
+	"nfsroot=$(serverip):$(rootpath)\0"											\
+	"addip=setenv bootargs $(bootargs) ip=$(ipaddr)\0"							\
+	"nfsboot=tftpboot 0x82000000 uImage;"										\
+	"run nfsargs;run addip;bootm\0"												\
+	"flashboot=bootm 0x20100000\0"												\
 	""
 
-//#define CONFIG_BOOTCOMMAND	"loadb 0x80100000;sleep 5;go 0x80100000"
-#define CONFIG_BOOTCOMMAND	"tftp;sleep 5;bootelf 0x82000000"
+#define CONFIG_BOOTCOMMAND	"run nfsboot"
 
 #define CONFIG_COMMANDS	      (	(CONFIG_CMD_DFL		|\
 				 CFG_CMD_PCI		|\
@@ -141,6 +143,7 @@
 #define CFG_MAX_NAND_DEVICE	1	/* Max number of NAND devices */
 #define NAND_MAX_CHIPS		1
 #define CFG_NAND_AUTO
+#define CONFIG_NAND_WINCE_ECC
 
 //#define CFG_NAND_DEBUG
 #define CONFIG_MTD_DEBUG

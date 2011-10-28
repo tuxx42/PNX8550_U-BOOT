@@ -91,6 +91,14 @@ static struct nand_oobinfo nand16bit_oob_16 = {
     .oobfree = { {8, 8} }
 };
 
+/* OOB Placement information that lines up with the wince code */
+static struct nand_oobinfo nandwince_oob = {
+	.useecc = MTD_NANDECC_AUTOPLACE,
+    .eccbytes = 6,
+    .eccpos = {8, 9, 10, 11, 12, 13},
+    .oobfree = { {0, 8} }
+};
+
 /* Pointer into XIO for access to the NAND flash device */
 static volatile u16 *pNandAddr;
 
@@ -117,6 +125,38 @@ static int is64mb = 0;
 
 static struct mtd_info *pnx8550_mtd;
 static struct nand_chip *pnx8550_nand;
+
+#ifdef CONFIG_NAND_WINCE_ECC
+static u_char eccArray[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1,
+		2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2,
+		3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 1,
+		2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3,
+		4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3,
+		4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 1, 2, 2, 3, 2, 3, 3, 4, 2,
+		3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2,
+		3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4,
+		5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3,
+		4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4,
+		5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8, 0,
+		1, 4, 5, 0x10, 0x11, 0x14, 0x15, 0x40, 0x41, 0x44, 0x45, 0x50, 0x51,
+		0x54, 0x55, 0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3, 0, 0, 1, 1,
+		0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3, 4, 4, 5, 5, 4, 4, 5, 5, 6, 6, 7, 7,
+		6, 6, 7, 7, 4, 4, 5, 5, 4, 4, 5, 5, 6, 6, 7, 7, 6, 6, 7, 7, 0, 0, 1, 1,
+		0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3, 0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3,
+		2, 2, 3, 3, 4, 4, 5, 5, 4, 4, 5, 5, 6, 6, 7, 7, 6, 6, 7, 7, 4, 4, 5, 5,
+		4, 4, 5, 5, 6, 6, 7, 7, 6, 6, 7, 7, 8, 8, 9, 9, 8, 8, 9, 9, 0xA, 0xA,
+		0xB, 0xB, 0xA, 0xA, 0xB, 0xB, 8, 8, 9, 9, 8, 8, 9, 9, 0xA, 0xA, 0xB,
+		0xB, 0xA, 0xA, 0xB, 0xB, 0xC, 0xC, 0xD, 0xD, 0xC, 0xC, 0xD, 0xD, 0xE,
+		0xE, 0xF, 0xF, 0xE, 0xE, 0xF, 0xF, 0xC, 0xC, 0xD, 0xD, 0xC, 0xC, 0xD,
+		0xD, 0xE, 0xE, 0xF, 0xF, 0xE, 0xE, 0xF, 0xF, 8, 8, 9, 9, 8, 8, 9, 9,
+		0xA, 0xA, 0xB, 0xB, 0xA, 0xA, 0xB, 0xB, 8, 8, 9, 9, 8, 8, 9, 9, 0xA,
+		0xA, 0xB, 0xB, 0xA, 0xA, 0xB, 0xB, 0xC, 0xC, 0xD, 0xD, 0xC, 0xC, 0xD,
+		0xD, 0xE, 0xE, 0xF, 0xF, 0xE, 0xE, 0xF, 0xF, 0xC, 0xC, 0xD, 0xD, 0xC,
+		0xC, 0xD, 0xD, 0xE, 0xE, 0xF, 0xF, 0xE, 0xE, 0xF, 0xF, 0x52, 0x53,
+		0x44, 0x53, 0x67, 0x98, 0xE5, 0x1F, 0x71, 0x94, 0x75, 0x45, 0x9F, 0x77,
+		0x16, 0x55, 0xA8, 0xCD, 0x45, 6, 0x11, 0, 0, 0,
+};
+#endif
 
 /******************************************************************************
 * FUNCTION IMPLEMENTATION                                                     *
@@ -265,7 +305,8 @@ static void pnx8550_nand_transferDMA(void *from, void *to, int bytes, int toxio)
     writel( IPA051_DMA_CTRL__MAX_BURST_SIZE_128	|
     		IPA051_DMA_CTRL__SND2XIO			|
     		IPA051_DMA_CTRL__INIT_DMA			|
-    		cmd, (IPA051 | IPA051_DMA_CTRL));
+    		IPA051_DMA_CTRL__CMD_TYPE(cmd),
+    		(IPA051 | IPA051_DMA_CTRL));
 
     while((readl(IPA051 | IPA051_DMA_INT_STATUS) & IPA051_DMA_INT__COMPL) == 0);
 }
@@ -526,18 +567,20 @@ static void pnx8550_nand_read_buf(struct mtd_info *mtd, u_char * buf, int len)
     int oobLen = 0;
     u_char *transBuf = buf;
     DEBUG("last_col_addr=%d last_page_addr=0x%x len=%d", last_col_addr, last_page_addr, len);
+
     /* some sanity checking, word access only please */
+#if 0
     if (len&1)
     {
         ERROR("non-word aligned length");
     }
+#endif
 
     pnx8550_nand_alloc_transfer_buffer();
     if (transferBuffer)
     {
         transBuf = transferBuffer;
     }
-
 
     /*
         Work out whether we are going to read the OOB area
@@ -582,7 +625,6 @@ static void pnx8550_nand_read_buf(struct mtd_info *mtd, u_char * buf, int len)
         last_page_addr ++;
     }
 
-    pnx8550_nand_wait_for_dev_ready();
 
     return;
 }
@@ -637,6 +679,7 @@ static void pnx8550_nand_command(struct mtd_info *mtd, unsigned command,
     int addr;
     int gpxio;
     DEBUG("command=0x%02x column=%d page_addr=0x%x",command, column, page_addr);
+
     /*
        If we are starting a write work out whether it is to the
        OOB or the main page and position the pointer correctly.
@@ -681,13 +724,13 @@ static void pnx8550_nand_command(struct mtd_info *mtd, unsigned command,
 
     case NAND_CMD_PAGEPROG:
         // Nothing to do, we've already done it!
-        return;
+        break;
 
     case NAND_CMD_SEQIN:
         if (addr_no != 3)
             ERROR("Error. Command %02x needs 3 byte address, but addr_no = %d", command, addr_no);
         pnx8550_nand_register_setup(2, 3, 1, 1, is64mb, NAND_CMD_SEQIN, NAND_CMD_PAGEPROG);
-        return;
+        break;
 
     case NAND_CMD_ERASE1:
         if (addr_no != 2)
@@ -700,17 +743,17 @@ static void pnx8550_nand_command(struct mtd_info *mtd, unsigned command,
         pnx8550_nand_register_setup(2, 2, 0, 1, is64mb, NAND_CMD_ERASE1, NAND_CMD_ERASE2);
         addr = NAND_ADDR(column, page_addr);
         NAND_ADDR_SEND(addr);
-        return;
+        break;
 
     case NAND_CMD_ERASE2:
         // Nothing to do, we've already done it!
-        return;
+    	break;
 
     case NAND_CMD_STATUS:
         if (addr_no != 0)
             ERROR("Error. Command %02x needs 0 byte address, but addr_no = %d", command, addr_no);
         pnx8550_nand_register_setup(1, 0, 1, 0, is64mb, NAND_CMD_STATUS, 0);
-        return;
+        break;
 
     case NAND_CMD_RESET:
         if (addr_no != 0)
@@ -718,7 +761,7 @@ static void pnx8550_nand_command(struct mtd_info *mtd, unsigned command,
         pnx8550_nand_register_setup(1, 0, 0, 0, 0, NAND_CMD_RESET, 0);
         addr = NAND_ADDR(column,page_addr);
         NAND_ADDR_SEND(addr);
-        return;
+        break;
 
     case NAND_CMD_READ1:
     case NAND_CMD_READ0:
@@ -726,21 +769,21 @@ static void pnx8550_nand_command(struct mtd_info *mtd, unsigned command,
             ERROR("Error. Command %02x needs 3 byte address, but addr_no = %d", command, addr_no);
 
         pnx8550_nand_register_setup(1, 3, 1, 1, is64mb, command, 0);
-        return;
+        break;
 
 
     case NAND_CMD_READOOB:
         if (addr_no != 3)
             ERROR("NAND: Error. Command %02x needs 3 byte address, but addr_no = %d", command, addr_no);
         pnx8550_nand_register_setup(1, 3, 1, 1, is64mb, NAND_CMD_READOOB, 0);
-        return;
+        break;
 
     case NAND_CMD_READID:
         if (addr_no != 1)
             ERROR("NAND: Error. Command %02x needs 1 byte address, but addr_no = %d",
                    command, addr_no);
         pnx8550_nand_register_setup(1, 1, 1, 0, 0, NAND_CMD_READID, 0);
-        return;
+        break;
     }
 }
 
@@ -764,13 +807,7 @@ static void pnx8550_nand_register_setup(u_char cmd_no,
     reg_nand |= IPA051_NAND_CTRLS__COMMAND_A(cmd_a);
     reg_nand |= IPA051_NAND_CTRLS__COMMAND_B(cmd_b);
     writel(reg_nand, (IPA051 | IPA051_NAND_CTRLS));
-    __asm__ __volatile__(                   \
-    		".set   push\n\t"               \
-    		".set   noreorder\n\t"          \
-    		".set mips2\n\t"				\
-    		"sync\n\t"                      \
-    		".set   pop"                    \
-			: : : "memory");
+    udelay(100);
 }
 
 
@@ -802,6 +839,172 @@ static void pnx8550_nand_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int c
    // Nothing to do here, its all done by the XIO block
 }
 
+/**
+ * nand_calculate_ecc - [NAND Interface] Calculate 3-byte ECC for 256-byte block
+ * @mtd:	MTD block structure
+ * @dat:	raw data
+ * @ecc_code:	buffer for ECC
+ */
+#ifdef CONFIG_NAND_WINCE_ECC
+static int pnx8550_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
+		u_char *ecc_code) {
+#warning This code is converted from assembler!
+	u32 a0, a1, a2, a3;
+	u32 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9;
+	u32 v0, v1;
+
+	a0 = (u32) dat;
+	a1 = (u32) ecc_code;
+
+	a3 = 0;
+	a2 = 0;
+	v1 = 0;
+	t0 = 0;
+	t1 = a0;
+	v0 = (u32) eccArray;
+
+	for (t0 = 0; t0 < 0x40; t0++) {
+		a0 = *((u32*) t1);
+		v1 = a0 ^ v1;
+		a0 = (a0 >> 16) ^ a0;
+		t4 = ((a0 >> 8) ^ a0);
+		t7 = *(eccArray + (t4 & 0xFF));
+		if (t7 & 1) {
+			a3 ^= t0;
+			a2 ^= ~t0;
+		}
+		t1 = t1 + 4;
+	}
+	t1 = (a3 >> 4) & 3;
+	t7 = (a2 >> 4) & 3;
+	t4 = *(eccArray + 0x100 + t1);
+	a0 = *(eccArray + 0x100 + t7);
+
+	t1 = ((t4 << 1) | a0) << 7;
+	t5 = *(eccArray + 0x100 + (a3 & 0xF));
+	t6 = t1 | t5;
+
+	a2 = *(eccArray + 0x100 + (a2 & 0xF));
+	a3 = (t6 << 1) | a2;
+
+	a0 = 0x55555555;
+	a2 = v1 & a0;
+	a2 = (a2 >> 16) ^ a2;
+	t2 = (a2 >> 8) ^ a2;
+	t6 = 0xAAAAAAAA;
+	a2 = v1 & t6;
+	a2 = (a2 >> 16) ^ a2;
+
+	t5 = *(eccArray + (t2 & 0xFF));
+	t9 = (a2 >> 8) ^ a2;
+
+	t4 = 0x33333333;
+	a2 = v1 & t4;
+	a0 = t5 & 1;
+
+	a2 = (a2 >> 16) ^ a2;
+	t7 = (a2 >> 8) ^ a2;
+	t1 = *(eccArray + (t9 & 0xFF));
+	t3 = (t1 & 1) << 1;
+
+	a2 = *(eccArray + (t7 & 0xFF));
+	t2 = 0xCCCCCCCC;
+	t0 = a2 & 1;
+	a2 = v1 & t2;
+	a0 = t3 | a0;
+	a2 = (a2 >> 16) ^ a2;
+	t5 = (a2 >> 8) ^ a2;
+	t8 = *(eccArray + (t5 & 0xFF));
+	t1 = t0 << 2;
+
+	a0 = t1 | a0;
+	a2 = (t8 & 1) << 3;
+	t0 = 0xF0F0F0F;
+	a0 = a2 | a0;
+	a2 = v1 & t0;
+	a2 = (a2 >> 16) ^ a2;
+	t3 = (a2 >> 8) ^ a2;
+	t9 = 0xF0F0F0F0;
+	t6 = *(eccArray + (t3 & 0xFF));
+	t7 = t6 & 1;
+	a2 = v1 & t9;
+	a2 = (a2 >> 16) ^ a2;
+	t2 = (a2 >> 8) ^ a2;
+	a0 = (t7 << 4) | a0;
+
+	t5 = *(eccArray + (t2 & 0xFF));
+	t8 = 0xFF00FF;
+	a2 = v1 & t8;
+	t6 = t5 & 1;
+	a2 = (a2 >> 16) ^ a2;
+	t5 = 0xFF00FF00;
+	t0 = a2 & 0xFF;
+	a2 = v1 & t5;
+	a0 = (t6 << 5) | a0;
+	t7 = (a2 >> 16) ^ a2;
+	t2 = *(eccArray + t0);
+	t9 = (t7 >> 8) & 0xFF;
+	t0 = *(eccArray + t9);
+	t3 = t2 & 1;
+	a2 = v1 & 0xFFFF;
+	a0 = (t3 << 6) | a0;
+	t4 = (a2 >> 8) ^ a2;
+	t7 = *(eccArray + (t4 & 0xFF));
+	t2 = (t0 & 1) << 7;
+	a0 = t2 | a0;
+	t9 = (t7 & 1) << 8;
+	v1 = v1 >> 16;
+	a2 = t9 | a0;
+	t0 = (v1 >> 8) ^ v1;
+	t3 = *(eccArray + (t0 & 0xFF));
+	*((u8*) a1) = a3;
+	t5 = (t3 & 1) << 9;
+	v0 = t5 | a2;
+	t8 = (a3 >> 8) | (v0 << 4);
+	v0 = (v0 >> 4) | 0xC0;
+	*((u8*) a1 + 1) = t8;
+	*((u8*) a1 + 2) = v0;
+
+	printf("ECC: %02x %02x %02x\n", ecc_code[0], ecc_code[1], ecc_code[2]);
+
+	return 0;
+}
+
+/**
+ * nand_correct_data - [NAND Interface] Detect and correct bit error(s)
+ * @mtd:	MTD block structure
+ * @dat:	raw data read from the chip
+ * @read_ecc:	ECC from the chip
+ * @calc_ecc:	the ECC calculated from raw data
+ *
+ * Detect and correct a 1 bit error for 256 byte block
+ */
+int pnx8550_nand_correct_data(struct mtd_info *mtd, u_char *dat, u_char *read_ecc,
+		u_char *calc_ecc) {
+
+	uint8_t s0, s1, s2;
+
+#ifdef CONFIG_MTD_NAND_ECC_SMC
+	s0 = calc_ecc[0] ^ read_ecc[0];
+	s1 = calc_ecc[1] ^ read_ecc[1];
+	s2 = calc_ecc[2] ^ read_ecc[2];
+#else
+	s1 = calc_ecc[0] ^ read_ecc[0];
+	s0 = calc_ecc[1] ^ read_ecc[1];
+	s2 = calc_ecc[2] ^ read_ecc[2];
+#endif
+	if ((s0 | s1 | s2) == 0)
+		return 0;
+
+	printf( "got: %02x %02x %02x\n"
+			"exp: %02x %02x %02x\n",
+			read_ecc[0], read_ecc[1], read_ecc[2],
+			calc_ecc[0], calc_ecc[1], calc_ecc[2]);
+
+	ERROR("DRIVER: Error correction not implemented!");
+	return -1;
+}
+#endif
 
 int board_nand_init (struct nand_chip *nand)
 {
@@ -858,6 +1061,11 @@ int board_nand_init (struct nand_chip *nand)
     this->dev_ready		= pnx8550_nand_dev_ready;
     this->hwcontrol		= pnx8550_nand_hwcontrol;
     this->eccmode		= NAND_ECC_SOFT;
+#ifdef CONFIG_NAND_WINCE_ECC
+    this->calculate_ecc	= pnx8550_nand_calculate_ecc;
+    this->correct_data	= pnx8550_nand_correct_data;
+    this->autooob		= &nandwince_oob;
+#endif
 
     /* We don't seem to have any mtd partitions */
 #if 0

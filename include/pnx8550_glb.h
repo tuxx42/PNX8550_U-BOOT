@@ -32,9 +32,9 @@
 
 /* Physical Mappings */
 #define SDRAM_BASE		0x00000000
-#define SDRAM_SIZE		0x08000000      /* 128MiB */
+#define SDRAM_SIZE		0x08000000  /* 128MiB */
 #define XIO_BASE		0x10000000
-#define XIO_SIZE		0x04000000	/* 64MiB (pwr of 2, 1 MiB minimum) */
+#define XIO_SIZE		0x08000000	/* 128MiB (pwr of 2, 1 MiB minimum) */
 #define MMIO_BASE		0x1BE00000
 #define MMIO_SIZE		0x00200000	/*  2MiB (pwr of 2, 1 MiB minimum) */
 #define PCIMEM_BASE		0x12000000

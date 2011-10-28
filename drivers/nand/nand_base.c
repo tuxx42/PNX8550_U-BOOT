@@ -2532,8 +2532,10 @@ int nand_scan (struct mtd_info *mtd, int maxchips)
 		break;
 
 	case NAND_ECC_SOFT:
-		this->calculate_ecc = nand_calculate_ecc;
-		this->correct_data = nand_correct_data;
+		if(!this->calculate_ecc)
+			this->calculate_ecc = nand_calculate_ecc;
+		if(!this->correct_data)
+			this->correct_data = nand_correct_data;
 		break;
 
 	default:

@@ -44,7 +44,14 @@
 
 long int initdram(int board_type)
 {
-	return SDRAM_SIZE;
+//	return SDRAM_SIZE;
+	/* Read IP2031_RANK0_ADDR_LO */
+	unsigned long dram_r0_lo = readl(IPA051 | 0x65010);
+	/* Read IP2031_RANK1_ADDR_HI */
+	unsigned long dram_r1_hi = readl(IPA051 | 0x65018);
+
+	return dram_r1_hi - dram_r0_lo + 1;
+
 }
 
 /* In cpu/mips/cpu.c */
@@ -86,7 +93,7 @@ int checkboard (void)
 	writel(PCIIO_BASE + PCIIO_SIZE + 1, IPA051 | IPA051_PCI_BASE2_HI);
 
 	/* Send memory transaction via PCI_BASE2 */
-	writel(0x00000000, IPA051 | IPA051_PCI_IO);
+	writel(0x00000001, IPA051 | IPA051_PCI_IO);
 
 	/* Unlock the setup register */
 	writel(0xca, IPA051 | IPA051_UNLOCK_REGISTER);
@@ -118,7 +125,7 @@ int checkboard (void)
 		IPA051_PCI_SETUP__EN_PCI_ARB,		/* Enable PCI arbiter */
 		IPA051 | IPA051_PCI_SETUP );		/* PCI_SETUP */
 
-	writel(0x00000000, IPA051 + IPA051_PCI_CONTROL);	/* PCI_CONTROL */
+	writel(0x00000000, IPA051 | IPA051_PCI_CONTROL);	/* PCI_CONTROL */
 #else
 	initdram(0);
 #endif /* CONFIG_PCI */
