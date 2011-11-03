@@ -68,7 +68,7 @@
 #define TOUT_LOOP		500000
 #define TX_BUF_SIZE		1536
 #define RX_BUF_SIZE		1536
-#define NUM_RX_DESC		4	/* Number of Rx descriptor registers. */
+#define NUM_RX_DESC		64	/* Number of Rx descriptor registers. */
 
 /* Offsets to the device registers.
    Unlike software-only systems, device drivers interact with complex hardware.
