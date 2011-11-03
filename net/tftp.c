@@ -303,7 +303,7 @@ TftpTimeout (void)
 		puts ("\nRetry count exceeded; starting again\n");
 		NetStartAgain ();
 	} else {
-		puts ("T ");
+		puts ("T");
 		NetSetTimeout (TIMEOUT * CFG_HZ, TftpTimeout);
 		TftpSend ();
 	}

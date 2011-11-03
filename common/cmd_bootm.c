@@ -337,6 +337,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 				l -= tail;
 			}
 #else	/* !(CONFIG_HW_WATCHDOG || CONFIG_WATCHDOG) */
+			printf ("   Loading %s ... ", name);
 			memmove ((void *) ntohl(hdr->ih_load), (uchar *)data, len);
 #endif	/* CONFIG_HW_WATCHDOG || CONFIG_WATCHDOG */
 		}
