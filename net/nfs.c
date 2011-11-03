@@ -34,7 +34,8 @@
 #if ((CONFIG_COMMANDS & CFG_CMD_NET) && (CONFIG_COMMANDS & CFG_CMD_NFS))
 
 #define HASHES_PER_LINE 65	/* Number of "loading" hashes per line	*/
-#define NFS_TIMEOUT 60
+#define NFS_TIMEOUT 5
+#define NFS_RETRY_COUNT 10
 
 static int fs_mounted = 0;
 static unsigned long rpc_id = 0;
@@ -129,11 +130,11 @@ RPC_ADD_CREDENTIALS - Add RPC authentication/verifier entries
 static long *rpc_add_credentials (long *p)
 {
 	int hl;
-	int hostnamelen;
-	char hostname[256];
+	int hostnamelen = 0;
+	char *hostname = getenv("hostname");
 
-	strcpy (hostname, "");
-	hostnamelen=strlen (hostname);
+	if(hostname)
+		hostnamelen=strlen (hostname);
 
 	/* Here's the executive summary on authentication requirements of the
 	 * various NFS server implementations:	Linux accepts both AUTH_NONE
@@ -154,7 +155,8 @@ static long *rpc_add_credentials (long *p)
 	if (hostnamelen & 3) {
 		*(p + hostnamelen / 4) = 0; /* add zero padding */
 	}
-	memcpy (p, hostname, hostnamelen);
+	if(hostname)
+		memcpy (p, hostname, hostnamelen);
 	p += hl / 4;
 	*p++ = 0;			/* uid */
 	*p++ = 0;			/* gid */
@@ -530,7 +532,7 @@ nfs_readlink_reply (uchar *pkt, unsigned len)
 		strcat (nfs_path, "/");
 		pathlen = strlen(nfs_path);
 		memcpy (nfs_path+pathlen, (uchar *)&(rpc_pkt.u.reply.data[2]), rlen);
-		nfs_path[pathlen+rlen+1] = 0;
+		nfs_path[pathlen + rlen] = 0;
 	} else {
 		memcpy (nfs_path, (uchar *)&(rpc_pkt.u.reply.data[2]), rlen);
 		nfs_path[rlen] = 0;
@@ -587,9 +589,14 @@ Interfaces of U-BOOT
 static void
 NfsTimeout (void)
 {
-	puts ("Timeout\n");
-	NetState = NETLOOP_FAIL;
-	return;
+	if ( ++NfsTimeoutCount > NFS_RETRY_COUNT ) {
+		puts ("\nRetry count exceeded; starting again\n");
+		NetStartAgain ();
+	} else {
+		puts ("T");
+		NetSetTimeout (NFS_TIMEOUT * CFG_HZ, NfsTimeout);
+		NfsSend ();
+	}
 }
 
 static void
