@@ -49,15 +49,19 @@
 				  4800, 9600, 19200, 38400, 57600, 115200, 230400 }
 
 #define CONFIG_TIMESTAMP		/* Print image info with timestamp */
-#undef	CONFIG_BOOTARGS
+#define	CONFIG_BOOTARGS				\
+	"console=ttyS0 "				\
+	"stb810_display=pal "			\
+	"nomainapp=1 "					\
+	""
 
 #define CONFIG_EXTRA_ENV_SETTINGS												\
-	"nfsargs=setenv bootargs root=/dev/nfs rw "									\
-	"nfsroot=$(serverip):$(rootpath)\0"											\
+	"root=setenv rootpath /pollinux/nandfs\0"									\
+	"nfsargs=setenv bootargs $(bootargs) root=/dev/nfs rw "						\
+		"nfsroot=$(serverip):$(rootpath)\0"										\
 	"addip=setenv bootargs $(bootargs) ip=$(ipaddr)\0"							\
-	"nfsboot=tftpboot 0x82000000 uImage;"										\
-	"run nfsargs;run addip;bootm\0"												\
-	"flashboot=bootm 0x20100000\0"												\
+	"nfsboot=nfs \"192.168.123.16:/pollinux/nandfs/boot/uImage\";"				\
+		"run root nfsargs addip;bootm\0"										\
 	""
 
 #define CONFIG_BOOTCOMMAND	"run nfsboot"
@@ -65,19 +69,21 @@
 #define CONFIG_COMMANDS	      (	(CONFIG_CMD_DFL		|\
 				 CFG_CMD_PCI		|\
 				 CFG_CMD_ELF		|\
-				 CFG_CMD_I2C		|\
 				 CFG_CMD_MEMORY		|\
-				 CFG_CMD_EEPROM		|\
 				 CFG_CMD_NET		|\
-				 CFG_CMD_NAND		|\
+				 CFG_CMD_ENV		|\
 				 CFG_CMD_PING)		&\
- 				~(CFG_CMD_ENV | CFG_CMD_FLASH | CFG_CMD_IMLS ) )
+ 				~( CFG_CMD_FLASH | CFG_CMD_IMLS ) )
 #include <cmd_confdefs.h>
+
+/*
+				 CFG_CMD_I2C		|\
+*/
 
 /*
  * Miscellaneous configurable options
  */
-#define CFG_LONGHELP				/* undef to save memory      */
+//#define CFG_LONGHELP				/* undef to save memory      */
 #define CFG_PROMPT		"# "	/* Monitor Command Prompt    */
 #define CFG_CBSIZE		256		/* Console I/O Buffer Size   */
 #define CFG_PBSIZE		(CFG_CBSIZE + sizeof(CFG_PROMPT) + 16)	/* Print Buffer Size */
@@ -116,8 +122,8 @@
 /* Address and size of Primary Environment Sector	*/
 #define CFG_NO_FLASH
 #define CFG_ENV_IS_NOWHERE
-#define CFG_ENV_ADDR		0x80104000
-#define CFG_ENV_SIZE		0x00004000
+#define CFG_ENV_ADDR		0x86004000
+#define CFG_ENV_SIZE		0x00060000
 
 
 /*-----------------------------------------------------------------------
@@ -132,15 +138,16 @@
  */
 #define CONFIG_PCI
 #define CONFIG_PCI_PNP
-#define CONFIG_PCI_SCAN_SHOW
+//#define CONFIG_PCI_SCAN_SHOW
 #define CONFIG_NXP_PCIXIO_IPA051
 
 /*-----------------------------------------------------------------------
  * NAND stuff
  */
+/*
 #define CFG_NAND0_BASE		0x0
 #define CFG_NAND_BASE_LIST	{ CFG_NAND0_BASE }
-#define CFG_MAX_NAND_DEVICE	1	/* Max number of NAND devices */
+#define CFG_MAX_NAND_DEVICE	1
 #define NAND_MAX_CHIPS		1
 #define CFG_NAND_AUTO
 #define CONFIG_NAND_WINCE_ECC
@@ -149,31 +156,35 @@
 #define CONFIG_MTD_DEBUG
 #define CONFIG_MTD_DEBUG_VERBOSE 1
 #define CONFIG_MTD_NAND_ECC_SMC
+*/
 
 /*-----------------------------------------------------------------------
  * Network stuff
  */
 #define CONFIG_NATSEMI
-#define NATSEMI_DEBUG
+//#define NATSEMI_DEBUG
 #define CONFIG_NET_MULTI
 
-#define CONFIG_SERVERIP		192.168.123.16		/* IP address of tftp server */
-#define CONFIG_IPADDR		192.168.123.15		/* Our IP address */
-#define CONFIG_NETMASK		255.255.255.0		/* Our net mask */
-#define CONFIG_BOOTFILE		vmlinux				/* File to boot */
-#define CONFIG_LOADADDR		0x82000000			/* SDRAM address to load files to */
+#define CONFIG_SERVERIP		192.168.123.16			/* IP address of tftp server */
+#define CONFIG_IPADDR		192.168.123.15			/* Our IP address */
+#define CONFIG_NETMASK		255.255.255.0			/* Our net mask */
+#define CONFIG_HOSTNAME		pollinux
+#define CONFIG_BOOTFILE		/pollinux/nandfs/boot/uImage	/* File to boot */
+#define CONFIG_LOADADDR		0x82000000				/* SDRAM address to load files to */
 
 /*-----------------------------------------------------------------------
  * I2C stuff
  */
+/*
 #define CONFIG_NXP_I2C
 #define CONFIG_NXP_I2C_IP0105
 #define CONFIG_NXP_I2C_IP3203
 #define CONFIG_HARD_I2C
-#define CFG_I2C_SPEED			(150000)	/* 150kHz */
+#define CFG_I2C_SPEED			(150000)
 #define CFG_I2C_SLAVE			0
 #define CFG_I2C_EEPROM_ADDR_LEN		1
 #define CONFIG_I2C_CMD_TREE
 #define CONFIG_I2C_MULTI_BUS
+*/
 
 #endif	/* __CONFIG_H */

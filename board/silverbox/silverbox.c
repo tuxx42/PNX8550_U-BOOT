@@ -44,14 +44,16 @@
 
 long int initdram(int board_type)
 {
-//	return SDRAM_SIZE;
+	return SDRAM_SIZE;
+
+#if 0
 	/* Read IP2031_RANK0_ADDR_LO */
 	unsigned long dram_r0_lo = readl(IPA051 | 0x65010);
 	/* Read IP2031_RANK1_ADDR_HI */
 	unsigned long dram_r1_hi = readl(IPA051 | 0x65018);
 
 	return dram_r1_hi - dram_r0_lo + 1;
-
+#endif
 }
 
 /* In cpu/mips/cpu.c */
@@ -59,11 +61,11 @@ void write_one_tlb( int index, u32 pagemask, u32 hi, u32 low0, u32 low1 );
 
 #if defined(CONFIG_PCI)
 static struct pci_controller hose;
-extern void init_nxp_ipa051_pci (struct pci_controller *);
+extern void init_nxp_ipa051_pci (struct pci_controller *, long int);
 
 void pci_init_board (void)
 {
-	init_nxp_ipa051_pci(&hose);
+	init_nxp_ipa051_pci(&hose, initdram(0));
 }
 #endif
 
