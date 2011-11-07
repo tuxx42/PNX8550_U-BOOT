@@ -304,7 +304,7 @@ natsemi_initialize(bd_t * bis)
 			break;
 		}
 
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_0, &iobase);
+		pci_read_config_dword(devno, PCI_BASE_ADDRESS_1, &iobase);
 		iobase &= ~0x3;	/* bit 1: unused and bit 0: I/O Space Indicator */
 
 		pci_write_config_dword(devno, PCI_COMMAND,
@@ -372,6 +372,14 @@ natsemi_initialize(bd_t * bis)
 			dev->enetaddr[i*2+1] = eedata >> 7;
 			prev_eedata = eedata;
 		}
+
+		printf("natsemi: MAC-Address: ");
+		for(i = 0; i < 6; i++) {
+			printf("%X", dev->enetaddr[i]);
+			if(i < 5)
+				printf(":");
+		}
+		printf("\n");
 
 		/* Reset the chip to erase any previous misconfiguration. */
 		OUTL(dev, ChipReset, ChipCmd);
@@ -568,6 +576,7 @@ natsemi_init(struct eth_device *dev, bd_t * bis)
 	 * implementations may have PME set to enable WakeOnLan.
 	 * With PME set the chip will scan incoming packets but
 	 * nothing will be written to memory. */
+	SavedClkRun = INL(dev, ClkRun);
 	OUTL(dev, SavedClkRun & ~0x100, ClkRun);
 
 	natsemi_init_rxfilter(dev);
@@ -610,13 +619,12 @@ natsemi_reset(struct eth_device *dev)
 	   performance" to be done in sequence.  These settings optimize some
 	   of the 100Mbit autodetection circuitry.  Also, we only want to do
 	   this for rev C of the chip.  */
-	if (INL(dev, SiliconRev) == 0x302) {
-		OUTW(dev, 0x0001, PGSEL);
-		OUTW(dev, 0x189C, PMDCSR);
-		OUTW(dev, 0x0000, TSTDAT);
-		OUTW(dev, 0x5040, DSPCFG);
-		OUTW(dev, 0x008C, SDCFG);
-	}
+	OUTW(dev, 0x0001, PGSEL);
+	OUTW(dev, 0x189C, PMDCSR);
+	OUTW(dev, 0x0000, TSTDAT);
+	OUTW(dev, 0x5040, DSPCFG);
+	OUTW(dev, 0x008C, SDCFG);
+
 	/* Disable interrupts using the mask. */
 	OUTL(dev, 0, IntrMask);
 	OUTL(dev, 0, IntrEnable);
@@ -658,10 +666,10 @@ natsemi_init_txd(struct eth_device *dev)
 {
 	txd.link = (u32) 0;
 	txd.cmdsts = (u32) 0;
-	txd.bufptr = (u32) & txb[0];
+	txd.bufptr = phys_to_bus((u32) & txb[0]);
 
 	/* load Transmit Descriptor Register */
-	OUTL(dev, (u32) & txd, TxRingPtr);
+	OUTL(dev, phys_to_bus((u32) & txd), TxRingPtr);
 #ifdef NATSEMI_DEBUG
 	printf("natsemi_init_txd: TX descriptor reg loaded with: %#08X\n",
 	       INL(dev, TxRingPtr));
@@ -687,12 +695,9 @@ natsemi_init_rxd(struct eth_device *dev)
 	/* init RX descriptor */
 	for (i = 0; i < NUM_RX_DESC; i++) {
 		rxd[i].link =
-		    cpu_to_le32((i + 1 <
-				 NUM_RX_DESC) ? (u32) & rxd[i +
-							    1] : (u32) &
-				rxd[0]);
+		    cpu_to_le32(phys_to_bus((i + 1 < NUM_RX_DESC) ? (u32) & rxd[i + 1] : (u32) & rxd[0]));
 		rxd[i].cmdsts = cpu_to_le32((u32) RX_BUF_SIZE);
-		rxd[i].bufptr = cpu_to_le32((u32) & rxb[i * RX_BUF_SIZE]);
+		rxd[i].bufptr = cpu_to_le32(phys_to_bus((u32) & rxb[i * RX_BUF_SIZE]));
 #ifdef NATSEMI_DEBUG
 		printf
 		    ("natsemi_init_rxd: rxd[%d]=%p link=%X cmdsts=%lX bufptr=%X\n",
@@ -702,7 +707,7 @@ natsemi_init_rxd(struct eth_device *dev)
 	}
 
 	/* load Receive Descriptor Register */
-	OUTL(dev, (u32) & rxd[0], RxRingPtr);
+	OUTL(dev, phys_to_bus((u32) & rxd[0]), RxRingPtr);
 
 #ifdef NATSEMI_DEBUG
 	printf("natsemi_init_rxd: RX descriptor register loaded with: %X\n",
@@ -759,8 +764,7 @@ natsemi_send(struct eth_device *dev, volatile void *packet, int length)
 {
 	u32 i, status = 0;
 	u32 tx_status = 0;
-	u32 *tx_ptr = &tx_status;
-	vu_long *res = (vu_long *)tx_ptr;
+	vu_long *res = (vu_long *)&tx_status;
 
 	/* Stop the transmitter */
 	OUTL(dev, TxOff, ChipCmd);
@@ -785,12 +789,9 @@ natsemi_send(struct eth_device *dev, volatile void *packet, int length)
 	/* restart the transmitter */
 	OUTL(dev, TxOn, ChipCmd);
 
-	for (i = 0;
-	     (*res = le32_to_cpu(txd.cmdsts)) & DescOwn;
-	     i++) {
+	for (i = 0; (*res = le32_to_cpu(txd.cmdsts)) & DescOwn; i++) {
 		if (i >= TOUT_LOOP) {
-			printf
-			    ("%s: tx error buffer not ready: txd.cmdsts == %#X\n",
+			printf ("%s: tx error buffer not ready: txd.cmdsts == %#X\n",
 			     dev->name, tx_status);
 			goto Done;
 		}
@@ -849,7 +850,7 @@ natsemi_poll(struct eth_device *dev)
 
 	/* return the descriptor and buffer to receive ring */
 	rxd[cur_rx].cmdsts = cpu_to_le32(RX_BUF_SIZE);
-	rxd[cur_rx].bufptr = cpu_to_le32((u32) & rxb[cur_rx * RX_BUF_SIZE]);
+	rxd[cur_rx].bufptr = cpu_to_le32(phys_to_bus((u32) & rxb[cur_rx * RX_BUF_SIZE]));
 
 	if (++cur_rx == NUM_RX_DESC)
 		cur_rx = 0;
