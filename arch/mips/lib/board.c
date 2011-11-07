@@ -306,9 +306,9 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	size = flash_init();
 	display_flash_config (size);
 	bd->bi_flashsize = size;
+	bd->bi_flashstart = CONFIG_SYS_FLASH_BASE;
 #endif
 
-	bd->bi_flashstart = CONFIG_SYS_FLASH_BASE;
 #if CONFIG_SYS_MONITOR_BASE == CONFIG_SYS_FLASH_BASE
 	bd->bi_flashoffset = monitor_flash_len;	/* reserved area for U-Boot */
 #else

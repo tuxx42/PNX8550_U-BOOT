@@ -28,6 +28,7 @@ static unsigned long timestamp;
 
 /* how many counter cycles in a jiffy */
 #define CYCLES_PER_JIFFY	(CONFIG_SYS_MIPS_TIMER_FREQ + CONFIG_SYS_HZ / 2) / CONFIG_SYS_HZ
+#define TICKS_PER_USEC		1000000
 
 /*
  * timer without interrupts
@@ -35,15 +36,28 @@ static unsigned long timestamp;
 
 int timer_init(void)
 {
+#ifdef CONFIG_MIPS_CPU_PR4450
+	unsigned int config7;
+
+	/* enable and start counter */
+	config7 = read_c0_config7();
+	config7 &= ~0x00000008;
+	write_c0_config7(config7);
+
+#endif // CONFIG_MIPS_CPU_PR4450
+
 	/* Set up the timer for the first expiration. */
 	timestamp = 0;
-	write_c0_compare(read_c0_count() + CYCLES_PER_JIFFY);
+	write_c0_count(0);
+	write_c0_compare(~0);
 
 	return 0;
 }
 
 ulong get_timer(ulong base)
 {
+	return (read_c0_count()/(CONFIG_SYS_MIPS_TIMER_FREQ/CONFIG_SYS_HZ)) - base;
+#if 0
 	unsigned int count;
 	unsigned int expirelo = read_c0_compare();
 
@@ -56,15 +70,37 @@ ulong get_timer(ulong base)
 	write_c0_compare(expirelo);
 
 	return (timestamp - base);
+#endif
 }
 
 void __udelay(unsigned long usec)
 {
+	ulong startTicks = read_c0_count();
+	ulong delayTicks = usec*(CONFIG_SYS_MIPS_TIMER_FREQ/TICKS_PER_USEC);
+	ulong endTicks;
+
+	/* Safeguard for too-long delays */
+	if (delayTicks >= 0x80000000)
+		delayTicks = 0x7FFFFFFF;
+
+	/* Calculate end of delay (once) */
+	endTicks = startTicks + delayTicks;
+
+	/* If end of delay is behind COUNT rol-over, wait for COUNT to rol-over first */
+	while ((read_c0_count() & 0x80000000) > (endTicks & 0x80000000))
+		; /* nop */
+
+	/* Wait for end of delay */
+	while (read_c0_count() < endTicks)
+		; /* nop */
+
+#if 0
 	unsigned int tmo;
 
 	tmo = read_c0_count() + (usec * (CONFIG_SYS_MIPS_TIMER_FREQ / 1000000));
 	while ((tmo - read_c0_count()) < 0x7fffffff)
 		/*NOP*/;
+#endif
 }
 
 /*
@@ -82,5 +118,5 @@ unsigned long long get_ticks(void)
  */
 ulong get_tbclk(void)
 {
-	return CONFIG_SYS_HZ;
+	return CONFIG_SYS_MIPS_TIMER_FREQ;
 }
