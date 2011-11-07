@@ -1,0 +1,161 @@
+/*
+ * (C) Copyright 2006
+ * NXP Semiconductors,
+ * Robert Delien robert.delien@nxp.com, Hans Zuidam hans.zuidam@nxp.com
+ *
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
+ */
+
+#ifndef NXP_PCIXIO_IPA051_H_
+#define NXP_PCIXIO_IPA051_H_
+
+/*
+ * Timeout and retry time for IO and CFG accesses
+ * in microseconds
+ */
+#define PCI_IO_TIMEOUT_US			10
+#define PCI_IO_RETRYTIME_US			1
+
+#define PCI_BYTE_ENABLE_MASK			0x0000000F
+#define PCI_CFG_BUS_SHIFT			16
+#define PCI_CFG_FUNC_SHIFT			8
+
+#define IPA051			((TO_UNCACHED(MMIO_BASE)) + 0x00040000)	/* PCIXIO */
+/*
+ * Register address definitions
+ */
+#define IPA051_PCI_SETUP			(IPA051 + 0x00000010)
+#define IPA051_PCI_CONTROL			(IPA051 + 0x00000014)
+#define IPA051_PCI_BASE1_LO			(IPA051 + 0x00000018)
+#define IPA051_PCI_BASE1_HI			(IPA051 + 0x0000001C)
+#define IPA051_PCI_BASE2_LO			(IPA051 + 0x00000020)
+#define IPA051_PCI_BASE2_HI			(IPA051 + 0x00000024)
+#define IPA051_READ_LIFETIME			(IPA051 + 0x00000028)
+#define IPA051_GPPM_ADDR			(IPA051 + 0x0000002C)
+#define IPA051_GPPM_WDAT			(IPA051 + 0x00000030)
+#define IPA051_GPPM_RDAT			(IPA051 + 0x00000034)
+#define IPA051_GPPM_CTRL			(IPA051 + 0x00000038)
+#define IPA051_UNLOCK_REGISTER			(IPA051 + 0x0000003C)
+#define IPA051_DEVICE_VENDORID			(IPA051 + 0x00000040)
+#define IPA051_CONFIG_CMD_STAT			(IPA051 + 0x00000044)
+#define IPA051_CLASS_CODE_REV_ID		(IPA051 + 0x00000048)
+#define IPA051_LATENCY_TIMER			(IPA051 + 0x0000004C)
+#define IPA051_BASE10				(IPA051 + 0x00000050)
+#define IPA051_BASE14				(IPA051 + 0x00000054)
+#define IPA051_BASE18				(IPA051 + 0x00000058)
+/*		IPA051_RESERVED				0x0000005C ... 0x00000060 */
+#define IPA051_SUBSYSTEM_IDS			(IPA051 + 0x0000006C)
+/*      IPA051_RESERVED					0x00000070 */
+#define IPA051_CAP_POINTER			(IPA051 + 0x00000074)
+/*      IPA051_RESERVED					0x00000078 */
+#define IPA051_CONFIG_MISC			(IPA051 + 0x0000007C)
+#define IPA051_PMC				(IPA051 + 0x00000080)
+#define IPA051_PWR_STATE			(IPA051 + 0x00000084)
+#define IPA051_PCI_IO				(IPA051 + 0x00000088)
+#define IPA051_SLV_TUNING			(IPA051 + 0x0000008C)
+#define IPA051_DMA_TUNING			(IPA051 + 0x00000090)
+/*		IPA051_RESERVED				0x00000094 ... 0x000007FC */
+#define IPA051_DMA_EADDR			(IPA051 + 0x00000800)
+#define IPA051_DMA_IADDR			(IPA051 + 0x00000804)
+#define IPA051_DMA_LENGTH			(IPA051 + 0x00000808)
+#define IPA051_DMA_CTRL				(IPA051 + 0x0000080C)
+#define IPA051_XIO_CTRL				(IPA051 + 0x00000810)
+#define IPA051_XIO_SEL0_PROF			(IPA051 + 0x00000814)
+#define IPA051_XIO_SEL1_PROF			(IPA051 + 0x00000818)
+#define IPA051_XIO_SEL2_PROF			(IPA051 + 0x0000081C)
+#define IPA051_GPXIO_ADDR			(IPA051 + 0x00000820)
+#define IPA051_GPXIO_WDATA			(IPA051 + 0x00000824)
+#define IPA051_GPXIO_RDATA			(IPA051 + 0x00000828)
+#define IPA051_GPXIO_CTRL			(IPA051 + 0x0000082C)
+#define IPA051_NAND_CTRLS			(IPA051 + 0x00000830)
+#define IPA051_XIO_SEL3_PROF			(IPA051 + 0x00000834)
+#define IPA051_XIO_SEL4_PROF			(IPA051 + 0x00000838)
+/*		IPA051_RESERVED				0x0000083C ... 0x00000FAC */
+#define IPA051_GPXIO_INT_STATUS			(IPA051 + 0x00000FB0)
+#define IPA051_GPXIO_INT_MASK			(IPA051 + 0x00000FB4)
+#define IPA051_GPXIO_INT_CLR			(IPA051 + 0x00000FB8)
+#define IPA051_GPXIO_INT_SET			(IPA051 + 0x00000FBC)
+#define IPA051_GPPM_INT_STATUS			(IPA051 + 0x00000FC0)
+#define IPA051_GPPM_INT_MASK			(IPA051 + 0x00000FC4)
+#define IPA051_GPPM_INT_CLR			(IPA051 + 0x00000FC8)
+#define IPA051_GPPM_INT_SET			(IPA051 + 0x00000FCC)
+#define IPA051_DMA_INT_STATUS			(IPA051 + 0x00000FD0)
+#define IPA051_DMA_INT_MASK			(IPA051 + 0x00000FD4)
+#define IPA051_DMA_INT_CLR			(IPA051 + 0x00000FD8)
+#define IPA051_DMA_INT_SET			(IPA051 + 0x00000FDC)
+#define IPA051_PCI_INT_STATUS			(IPA051 + 0x00000FE0)
+#define IPA051_PCI_INT_MASK			(IPA051 + 0x00000FE4)
+#define IPA051_PCI_INT_CLR			(IPA051 + 0x00000FE8)
+#define IPA051_PCI_INT_SET			(IPA051 + 0x00000FEC)
+/*		IPA051_RESERVED				0x00000FF0 ... 0x00000FF8 */
+#define IPA051_MODULE_ID			(IPA051 + 0x00000FFC)
+
+
+/*
+ * Register layout definitions
+ */
+
+/* IPA051_GPPM_CTRL register fields */
+#define IPA051_GPPM_CTRL__GPPM_DONE		(1<<10)
+#define IPA051_GPPM_CTRL__INIT_PCI_CYCLE	(1<<9)
+#define IPA051_GPPM_CTRL__GPPM_CMD_IO_RD	0x00000020
+#define IPA051_GPPM_CTRL__GPPM_CMD_IO_WR	0x00000030
+#define IPA051_GPPM_CTRL__GPPM_CMD_MEM_RD	0x00000060 /*?*/
+#define IPA051_GPPM_CTRL__GPPM_CMD_MEM_WR	0x00000070 /*?*/
+#define IPA051_GPPM_CTRL__GPPM_CMD_CFG_RD	0x000000A0
+#define IPA051_GPPM_CTRL__GPPM_CMD_CFG_WR	0x000000B0
+#define IPA051_GPPM_CTRL__GPPM_CMD(X)		(((X)&0x0000000F)<<4)
+#define IPA051_GPPM_CTRL__GPPM_BEN(X)		((X)&0x0000000F)
+
+/* IPA051_GPPM_INT register fields */
+#define IPA051_GPPM_INT__GPPM_DONE		(1<<10)
+#define IPA051_GPPM_INT__GPPM_ERR		(1<<9)
+#define IPA051_GPPM_INT__GPPM_MSTR_PARITY_ERR	(1<<5)
+#define IPA051_GPPM_INT__GPPM_ERR_PARITY	(1<<4)
+#define IPA051_GPPM_INT__GPPM_R_MABORT		(1<<2)
+#define IPA051_GPPM_INT__GPPM_R_TABORT		(1<<1)
+
+/* IPA051_PCI_SETUP register fields */
+#define IPA051_PCI_SETUP__DIS_REQGNT		(1<<30)
+#define IPA051_PCI_SETUP__DIS_REQGNT_A		(1<<29)
+#define IPA051_PCI_SETUP__DIS_REQGNT_B		(1<<28)
+#define IPA051_PCI_SETUP__D2_SUPPORT		(1<<27)
+#define IPA051_PCI_SETUP__D1_SUPPORT		(1<<26)
+#define IPA051_PCI_SETUP__EN_TA			(1<<24)
+#define IPA051_PCI_SETUP__EN_PCI2MMI		(1<<23)
+#define IPA051_PCI_SETUP__EN_XIO		(1<<22)
+#define IPA051_PCI_SETUP__BASE18_PREFETCHABLE	(1<<21)
+#define IPA051_PCI_SETUP__BASE18_SIZ(X)		(X<<18)
+#define IPA051_PCI_SETUP__EN_BASE18		(1<<17)
+#define IPA051_PCI_SETUP__BASE14_PREFETCHABLE	(1<<16)
+#define IPA051_PCI_SETUP__BASE14_SIZ(X)		(X<<12)
+#define IPA051_PCI_SETUP__EN_BASE14		(1<<11)
+#define IPA051_PCI_SETUP__BASE10_PREFETCHABLE	(1<<10)
+#define IPA051_PCI_SETUP__BASE10_SIZ(X)		(X<<7)
+#define IPA051_PCI_SETUP__EN_CONFIG_MANAG	(1<<1)
+#define IPA051_PCI_SETUP__EN_PCI_ARB		(1<<0)
+#define IPA051_PCI_SETUP__BASExx_SIZ_16M	0x00000003
+#define IPA051_PCI_SETUP__BASExx_SIZ_32M	0x00000004
+#define IPA051_PCI_SETUP__BASExx_SIZ_64M	0x00000005
+#define IPA051_PCI_SETUP__BASExx_SIZ_128M	0x00000006
+
+void init_nxp_ipa051_pci(struct pci_controller*);
+
+#endif /* NXP_PCIXIO_IPA051_H_ */
