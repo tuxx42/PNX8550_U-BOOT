@@ -51,11 +51,16 @@
 	"la=80100000\0"								\
 	"ld=loadb $(la);sleep 5;go $(la)\0"					\
 	"rootpath=/pollinux/nandfs\0"						\
+	"loadaddr=0x82000000\0"							\
+	""									\
 	"nfsargs=setenv bootargs $(bootargs) root=/dev/nfs rw "			\
 		"nfsroot=$(serverip):$(rootpath)\0"				\
+	"ideargs=setenv bootargs $(bootargs) root=$(rootdev) rw\0"		\
 	"addip=setenv bootargs $(bootargs) ip=$(ipaddr)\0"			\
-	"nfsboot=nfs \"192.168.123.16:/pollinux/nandfs/boot/uImage\";"		\
-		"run fsargs addip;bootm\0"					\
+	"nfsboot=nfs \"$(serverip):$(bootfile)\";"				\
+		"run nfsargs addip;bootm\0"					\
+	"ideboot=sata init;ext2load sata 0:1 $(loadaddr) $(bootfile);"		\
+		"run ideargs addip;bootm\0"					\
 	""
 
 /* Boot from NFS root */
@@ -64,7 +69,7 @@
 /*-----------------------------------------------------------------------
  * Miscellaneous configurable options
  */
-#undef	CONFIG_SYS_LONGHELP				/* undef to save memory      */
+#define	CONFIG_SYS_LONGHELP				/* undef to save memory      */
 #define	CONFIG_SYS_PROMPT		"pollinux> "	/* Monitor Command Prompt    */
 #define	CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
@@ -126,6 +131,7 @@
  * PCI configuration
  */
 #define	CONFIG_PCI
+#define CONFIG_PCI_PNP
 #undef	CONFIG_PCI_SCAN_SHOW
 #define	CONFIG_IPA051_PCIXIO
 
