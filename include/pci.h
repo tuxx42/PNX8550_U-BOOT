@@ -339,6 +339,9 @@ struct pci_region {
 #define PCI_REGION_SYS_MEMORY	0x00000100	/* System memory */
 #define PCI_REGION_RO		0x00000200	/* Read-only memory */
 
+#define PCI_AUTODETECT_REGION	-1
+#define PCI_REGION_MASK		0x00000001
+
 extern __inline__ void pci_set_region(struct pci_region *reg,
 				      pci_addr_t bus_start,
 				      phys_addr_t phys_start,

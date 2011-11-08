@@ -124,6 +124,10 @@ void *pci_map_bar(pci_dev_t pdev, int bar, int flags)
 	pci_read_config_dword(pdev, bar, &bar_response);
 	pci_bus_addr = (pci_addr_t)(bar_response & ~0xf);
 
+	/* override flags if requested */
+	if(flags == PCI_AUTODETECT_REGION)
+		flags = bar_response & PCI_REGION_MASK;
+
 	/*
 	 * Pass "0" as the length argument to pci_bus_to_virt.  The arg
 	 * isn't actualy used on any platform because u-boot assumes a static
