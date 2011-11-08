@@ -720,12 +720,12 @@ init_sata(int dev)
 		}
 
 		/* Read out all BARs, even though we only use MMIO from BAR5 */
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_0, &bar->bar[0]);
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_1, &bar->bar[1]);
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_2, &bar->bar[2]);
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_3, &bar->bar[3]);
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_4, &bar->bar[4]);
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_5, &bar->bar[5]);
+		bar->bar[0] = (u32)pci_map_bar(devno, PCI_BASE_ADDRESS_0, PCI_AUTODETECT_REGION);
+		bar->bar[1] = (u32)pci_map_bar(devno, PCI_BASE_ADDRESS_1, PCI_AUTODETECT_REGION);
+		bar->bar[2] = (u32)pci_map_bar(devno, PCI_BASE_ADDRESS_2, PCI_AUTODETECT_REGION);
+		bar->bar[3] = (u32)pci_map_bar(devno, PCI_BASE_ADDRESS_3, PCI_AUTODETECT_REGION);
+		bar->bar[4] = (u32)pci_map_bar(devno, PCI_BASE_ADDRESS_4, PCI_AUTODETECT_REGION);
+		bar->bar[5] = (u32)pci_map_bar(devno, PCI_BASE_ADDRESS_5, PCI_AUTODETECT_REGION);
 
 		if ((bar->bar[0] == 0xFFFFFFFF) ||
 		    (bar->bar[1] == 0xFFFFFFFF) ||
@@ -739,12 +739,12 @@ init_sata(int dev)
 		}
 
 		/* mask off unused bits */
-		bar->bar[0] = pci_to_mem(devno, bar->bar[0], 0xfffffff8);
-		bar->bar[1] = pci_to_mem(devno, bar->bar[1], 0xfffffffc);
-		bar->bar[2] = pci_to_mem(devno, bar->bar[2], 0xfffffff8);
-		bar->bar[3] = pci_to_mem(devno, bar->bar[3], 0xfffffffc);
-		bar->bar[4] = pci_to_mem(devno, bar->bar[4], 0xfffffff0);
-		bar->bar[5] = pci_to_mem(devno, bar->bar[5], 0xfffffe00);
+		bar->bar[0] &= 0xfffffff8;
+		bar->bar[1] &= 0xfffffffc;
+		bar->bar[2] &= 0xfffffff8;
+		bar->bar[3] &= 0xfffffffc;
+		bar->bar[4] &= 0xfffffff0;
+		bar->bar[5] &= 0xfffffe00;
 		debug("baseaddr[0] = 0x%08x\n", bar->bar[0]);
 		debug("baseaddr[1] = 0x%08x\n", bar->bar[1]);
 		debug("baseaddr[2] = 0x%08x\n", bar->bar[2]);

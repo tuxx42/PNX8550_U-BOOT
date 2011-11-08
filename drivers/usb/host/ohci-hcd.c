@@ -1648,7 +1648,7 @@ static int hc_reset(ohci_t *ohci)
 		u32 base;
 		int timeout = 1000;
 
-		pci_read_config_dword(pdev, PCI_BASE_ADDRESS_0, &base);
+		base = (u32)pci_map_bar(pdev, PCI_BASE_ADDRESS_0, PCI_REGION_IO);
 		base += EHCI_USBCMD_OFF;
 		ohci_writel(ohci_readl(base) | EHCI_USBCMD_HCRESET, base);
 
@@ -1924,7 +1924,7 @@ int usb_lowlevel_init(void)
 		printf("OHCI pci controller (%04x, %04x) found @(%d:%d:%d)\n",
 				vid, did, (pdev >> 16) & 0xff,
 				(pdev >> 11) & 0x1f, (pdev >> 8) & 0x7);
-		pci_read_config_dword(pdev, PCI_BASE_ADDRESS_0, &base);
+		base = (u32)pci_map_bar(pdev, PCI_BASE_ADDRESS_0, PCI_REGION_IO);
 		printf("OHCI regs address 0x%08x\n", base);
 		gohci.regs = (struct ohci_regs *)base;
 	} else

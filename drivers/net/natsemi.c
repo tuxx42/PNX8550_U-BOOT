@@ -304,7 +304,7 @@ natsemi_initialize(bd_t * bis)
 			break;
 		}
 
-		pci_read_config_dword(devno, PCI_BASE_ADDRESS_1, &iobase);
+		iobase = (u32)pci_map_bar(devno, PCI_BASE_ADDRESS_1, PCI_AUTODETECT_REGION);
 		iobase &= ~0x3;	/* bit 1: unused and bit 0: I/O Space Indicator */
 
 		pci_write_config_dword(devno, PCI_COMMAND,
@@ -328,7 +328,7 @@ natsemi_initialize(bd_t * bis)
 		memset(dev, 0, sizeof(*dev));
 
 		sprintf(dev->name, "dp83815#%d", card_number);
-		dev->iobase = bus_to_phys(iobase);
+		dev->iobase = iobase;
 #ifdef NATSEMI_DEBUG
 		printf("natsemi: NatSemi ns8381[56] @ %#x\n", dev->iobase);
 #endif
