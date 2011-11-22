@@ -339,9 +339,9 @@
 
 /************************************************/
 
-#define PORTB		(((volatile immap_t *)CFG_IMMR)->im_cpm.cp_pbdat)
-#define PORTC		(((volatile immap_t *)CFG_IMMR)->im_ioport.iop_pcdat)
-#define PORTD		(((volatile immap_t *)CFG_IMMR)->im_ioport.iop_pddat)
+#define PORTB		(((volatile immap_t *)CONFIG_SYS_IMMR)->im_cpm.cp_pbdat)
+#define PORTC		(((volatile immap_t *)CONFIG_SYS_IMMR)->im_ioport.iop_pcdat)
+#define PORTD		(((volatile immap_t *)CONFIG_SYS_IMMR)->im_ioport.iop_pddat)
 
 #define _PORTD_SET(mask, state) \
 	do { \
@@ -502,7 +502,7 @@ void codsp_write_sop_short(int duslic_id, int channel, unsigned char regno, unsi
 
 void codsp_write_sop_int(int duslic_id, int channel, unsigned char regno, unsigned int val)
 {
-	unsigned char cmd[5];
+	unsigned char cmd[6];
 
 	cmd[0] = CODSP_WR | CODSP_ADR(channel) | CODSP_CMD_SOP;
 	cmd[1] = regno;
@@ -577,7 +577,7 @@ void codsp_write_cop_char(int duslic_id, int channel, unsigned char addr, unsign
 
 void codsp_write_cop_short(int duslic_id, int channel, unsigned char addr, unsigned short val)
 {
-	unsigned char cmd[3];
+	unsigned char cmd[4];
 
 	cmd[0] = CODSP_WR | CODSP_OP | CODSP_ADR(channel) | CODSP_CMD_COP;
 	cmd[1] = addr;
@@ -668,7 +668,7 @@ void codsp_write_pop_short (int duslic_id, int channel, unsigned char regno,
 void codsp_write_pop_int (int duslic_id, int channel, unsigned char regno,
 			  unsigned int val)
 {
-	unsigned char cmd[5];
+	unsigned char cmd[6];
 
 	cmd[0] = CODSP_WR | CODSP_ADR (channel) | CODSP_CMD_POP;
 	cmd[1] = regno;

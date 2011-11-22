@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2002
- * St‰ubli Faverges - <www.staubli.com>
+ * St√§ubli Faverges - <www.staubli.com>
  * Pierre AUBERT  p.aubert@staubli.com
  *
  * See file CREDITS for list of people who contributed to this
@@ -27,8 +27,6 @@
 
 #include "dos.h"
 #include "fdos.h"
-
-#if (CONFIG_COMMANDS & CFG_CMD_FDOS)
 
 #define NB_HEADS        2
 #define NB_TRACKS       80
@@ -190,6 +188,3 @@ int check_dev (BootSector_t *boot, Fs_t *fs)
 
     return (0);
 }
-
-
-#endif

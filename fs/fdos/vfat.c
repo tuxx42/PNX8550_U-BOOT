@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2002
- * St‰ubli Faverges - <www.staubli.com>
+ * St√§ubli Faverges - <www.staubli.com>
  * Pierre AUBERT  p.aubert@staubli.com
  *
  * See file CREDITS for list of people who contributed to this
@@ -24,8 +24,6 @@
 
 #include <common.h>
 #include <config.h>
-
-#if (CONFIG_COMMANDS & CFG_CMD_FDOS)
 #include <linux/ctype.h>
 
 #include "dos.h"
@@ -352,6 +350,3 @@ static char *conv_name (char *name, char *ext, char Case, char *ans)
     }
     return (ans);
 }
-
-
-#endif

@@ -22,7 +22,7 @@
  */
 
 #include <common.h>
-#include <ppc4xx.h>
+#include <asm/ppc4xx.h>
 #include <asm/processor.h>
 
 /*
@@ -48,7 +48,7 @@ unsigned long flash_init (void)
 	int size_val = 0;
 
 	/* Init: no FLASHes known */
-	for (i=0; i<CFG_MAX_FLASH_BANKS; ++i) {
+	for (i=0; i<CONFIG_SYS_MAX_FLASH_BANKS; ++i) {
 		flash_info[i].flash_id = FLASH_UNKNOWN;
 	}
 
@@ -65,9 +65,9 @@ unsigned long flash_init (void)
 	flash_get_offsets (-size_b0, &flash_info[0]);
 
 	/* Re-do sizing to get full correct info */
-	mtdcr(ebccfga, pb0cr);
-	pbcr = mfdcr(ebccfgd);
-	mtdcr(ebccfga, pb0cr);
+	mtdcr(EBC0_CFGADDR, PB0CR);
+	pbcr = mfdcr(EBC0_CFGDATA);
+	mtdcr(EBC0_CFGADDR, PB0CR);
 	base_b0 = -size_b0;
 	switch (size_b0) {
 	case 1 << 20:
@@ -87,7 +87,7 @@ unsigned long flash_init (void)
 		break;
 	}
 	pbcr = (pbcr & 0x0001ffff) | base_b0 | (size_val << 17);
-	mtdcr(ebccfgd, pbcr);
+	mtdcr(EBC0_CFGDATA, pbcr);
 
 	/* Monitor protection ON by default */
 	(void)flash_protect(FLAG_PROTECT_SET,

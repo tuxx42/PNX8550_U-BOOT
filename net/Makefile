@@ -23,19 +23,27 @@
 
 include $(TOPDIR)/config.mk
 
-# CFLAGS += -DET_DEBUG -DDEBUG
+# CFLAGS += -DDEBUG
 
-LIB	= $(obj)libnet.a
+LIB	= $(obj)libnet.o
 
-COBJS	= net.o tftp.o bootp.o rarp.o eth.o nfs.o sntp.o
+COBJS-$(CONFIG_CMD_NET)  += bootp.o
+COBJS-$(CONFIG_CMD_DNS)  += dns.o
+COBJS-$(CONFIG_CMD_NET)  += eth.o
+COBJS-$(CONFIG_CMD_NET)  += net.o
+COBJS-$(CONFIG_CMD_NFS)  += nfs.o
+COBJS-$(CONFIG_CMD_RARP) += rarp.o
+COBJS-$(CONFIG_CMD_SNTP) += sntp.o
+COBJS-$(CONFIG_CMD_NET)  += tftp.o
 
+COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS))
 
 all:	$(LIB)
 
 $(LIB):	$(obj).depend $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
 
 #########################################################################
 

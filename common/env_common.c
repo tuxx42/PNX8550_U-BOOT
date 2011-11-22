@@ -1,10 +1,10 @@
 /*
- * (C) Copyright 2000-2002
+ * (C) Copyright 2000-2010
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
  * (C) Copyright 2001 Sysgo Real-Time Solutions, GmbH <www.elinos.com>
  * Andreas Heppel <aheppel@sysgo.de>
-
+ *
  * See file CREDITS for list of people who contributed to this
  * project.
  *
@@ -28,28 +28,11 @@
 #include <command.h>
 #include <environment.h>
 #include <linux/stddef.h>
+#include <search.h>
+#include <errno.h>
 #include <malloc.h>
 
-#ifdef CONFIG_SHOW_BOOT_PROGRESS
-# include <status_led.h>
-# define SHOW_BOOT_PROGRESS(arg)	show_boot_progress(arg)
-#else
-# define SHOW_BOOT_PROGRESS(arg)
-#endif
-
 DECLARE_GLOBAL_DATA_PTR;
-
-#ifdef CONFIG_AMIGAONEG3SE
-	extern void enable_nvram(void);
-	extern void disable_nvram(void);
-#endif
-
-#undef DEBUG_ENV
-#ifdef DEBUG_ENV
-#define DEBUGF(fmt,args...) printf(fmt ,##args)
-#else
-#define DEBUGF(fmt,args...)
-#endif
 
 extern env_t *env_ptr;
 
@@ -57,7 +40,6 @@ extern void env_relocate_spec (void);
 extern uchar env_get_char_spec(int);
 
 static uchar env_get_char_init (int index);
-uchar (*env_get_char)(int) = env_get_char_init;
 
 /************************************************************************
  * Default settings to be used when no valid environment is found
@@ -65,7 +47,7 @@ uchar (*env_get_char)(int) = env_get_char_init;
 #define XMK_STR(x)	#x
 #define MK_STR(x)	XMK_STR(x)
 
-uchar default_environment[] = {
+const uchar default_environment[] = {
 #ifdef	CONFIG_BOOTARGS
 	"bootargs="	CONFIG_BOOTARGS			"\0"
 #endif
@@ -99,14 +81,20 @@ uchar default_environment[] = {
 #ifdef	CONFIG_ETH3ADDR
 	"eth3addr="	MK_STR(CONFIG_ETH3ADDR)		"\0"
 #endif
+#ifdef	CONFIG_ETH4ADDR
+	"eth4addr="	MK_STR(CONFIG_ETH4ADDR)		"\0"
+#endif
+#ifdef	CONFIG_ETH5ADDR
+	"eth5addr="	MK_STR(CONFIG_ETH5ADDR)		"\0"
+#endif
 #ifdef	CONFIG_IPADDR
 	"ipaddr="	MK_STR(CONFIG_IPADDR)		"\0"
 #endif
 #ifdef	CONFIG_SERVERIP
 	"serverip="	MK_STR(CONFIG_SERVERIP)		"\0"
 #endif
-#ifdef	CFG_AUTOLOAD
-	"autoload="	CFG_AUTOLOAD			"\0"
+#ifdef	CONFIG_SYS_AUTOLOAD
+	"autoload="	CONFIG_SYS_AUTOLOAD			"\0"
 #endif
 #ifdef	CONFIG_PREBOOT
 	"preboot="	CONFIG_PREBOOT			"\0"
@@ -141,14 +129,7 @@ uchar default_environment[] = {
 	"\0"
 };
 
-#if defined(CFG_ENV_IS_IN_NAND)		/* Environment is in Nand Flash */
-int default_environment_size = sizeof(default_environment);
-#endif
-
-void env_crc_update (void)
-{
-	env_ptr->crc = crc32(0, env_ptr->data, ENV_SIZE);
-}
+struct hsearch_data env_htab;
 
 static uchar env_get_char_init (int index)
 {
@@ -156,147 +137,141 @@ static uchar env_get_char_init (int index)
 
 	/* if crc was bad, use the default environment */
 	if (gd->env_valid)
-	{
 		c = env_get_char_spec(index);
-	} else {
+	else
 		c = default_environment[index];
-	}
 
 	return (c);
 }
 
-#ifdef CONFIG_AMIGAONEG3SE
 uchar env_get_char_memory (int index)
 {
-	uchar retval;
-	enable_nvram();
-	if (gd->env_valid) {
-		retval = ( *((uchar *)(gd->env_addr + index)) );
-	} else {
-		retval = ( default_environment[index] );
-	}
-	disable_nvram();
-	return retval;
+	return *env_get_addr(index);
 }
-#else
-uchar env_get_char_memory (int index)
-{
-	if (gd->env_valid) {
-		return ( *((uchar *)(gd->env_addr + index)) );
-	} else {
-		return ( default_environment[index] );
-	}
-}
-#endif
 
-uchar *env_get_addr (int index)
+uchar env_get_char (int index)
 {
-	if (gd->env_valid) {
-		return ( ((uchar *)(gd->env_addr + index)) );
-	} else {
-		return (&default_environment[index]);
+	uchar c;
+
+	/* if relocated to RAM */
+	if (gd->flags & GD_FLG_RELOC)
+		c = env_get_char_memory(index);
+	else
+		c = env_get_char_init(index);
+
+	return (c);
+}
+
+const uchar *env_get_addr (int index)
+{
+	if (gd->env_valid)
+		return (uchar *)(gd->env_addr + index);
+	else
+		return &default_environment[index];
+}
+
+void set_default_env(const char *s)
+{
+	if (sizeof(default_environment) > ENV_SIZE) {
+		puts("*** Error - default environment is too large\n\n");
+		return;
 	}
+
+	if (s) {
+		if (*s == '!') {
+			printf("*** Warning - %s, "
+				"using default environment\n\n",
+				s+1);
+		} else {
+			puts(s);
+		}
+	} else {
+		puts("Using default environment\n\n");
+	}
+
+	if (himport_r(&env_htab, (char *)default_environment,
+		    sizeof(default_environment), '\0', 0) == 0) {
+		error("Environment import failed: errno = %d\n", errno);
+	}
+	gd->flags |= GD_FLG_ENV_READY;
+}
+
+/*
+ * Check if CRC is valid and (if yes) import the environment.
+ * Note that "buf" may or may not be aligned.
+ */
+int env_import(const char *buf, int check)
+{
+	env_t *ep = (env_t *)buf;
+
+	if (check) {
+		uint32_t crc;
+
+		memcpy(&crc, &ep->crc, sizeof(crc));
+
+		if (crc32(0, ep->data, ENV_SIZE) != crc) {
+			set_default_env("!bad CRC");
+			return 0;
+		}
+	}
+
+	if (himport_r(&env_htab, (char *)ep->data, ENV_SIZE, '\0', 0)) {
+		gd->flags |= GD_FLG_ENV_READY;
+		return 1;
+	}
+
+	error("Cannot import environment: errno = %d\n", errno);
+
+	set_default_env("!import failed");
+
+	return 0;
 }
 
 void env_relocate (void)
 {
-	DEBUGF ("%s[%d] offset = 0x%lx\n", __FUNCTION__,__LINE__,
-		gd->reloc_off);
+#if defined(CONFIG_NEEDS_MANUAL_RELOC)
+	extern void env_reloc(void);
 
-#ifdef CONFIG_AMIGAONEG3SE
-	enable_nvram();
+	env_reloc();
 #endif
-
-#ifdef ENV_IS_EMBEDDED
-	/*
-	 * The environment buffer is embedded with the text segment,
-	 * just relocate the environment pointer
-	 */
-	env_ptr = (env_t *)((ulong)env_ptr + gd->reloc_off);
-	DEBUGF ("%s[%d] embedded ENV at %p\n", __FUNCTION__,__LINE__,env_ptr);
-#else
-	/*
-	 * We must allocate a buffer for the environment
-	 */
-	env_ptr = (env_t *)malloc (CFG_ENV_SIZE);
-	DEBUGF ("%s[%d] malloced ENV at %p\n", __FUNCTION__,__LINE__,env_ptr);
-#endif
-
-	/*
-	 * After relocation to RAM, we can always use the "memory" functions
-	 */
-	env_get_char = env_get_char_memory;
-
 	if (gd->env_valid == 0) {
-#if defined(CONFIG_GTH)	|| defined(CFG_ENV_IS_NOWHERE)	/* Environment not changable */
-		puts ("Using default environment\n\n");
+#if defined(CONFIG_ENV_IS_NOWHERE)	/* Environment not changable */
+		set_default_env(NULL);
 #else
-		puts ("*** Warning - bad CRC, using default environment\n\n");
-		SHOW_BOOT_PROGRESS (-1);
+		show_boot_progress (-60);
+		set_default_env("!bad CRC");
 #endif
-
-		if (sizeof(default_environment) > ENV_SIZE)
-		{
-			puts ("*** Error - default environment is too large\n\n");
-			return;
-		}
-
-		memset (env_ptr, 0, sizeof(env_t));
-		memcpy (env_ptr->data,
-			default_environment,
-			sizeof(default_environment));
-#ifdef CFG_REDUNDAND_ENVIRONMENT
-		env_ptr->flags = 0xFF;
-#endif
-		env_crc_update ();
-		gd->env_valid = 1;
-	}
-	else {
+	} else {
 		env_relocate_spec ();
 	}
-	gd->env_addr = (ulong)&(env_ptr->data);
-
-#ifdef CONFIG_AMIGAONEG3SE
-	disable_nvram();
-#endif
 }
 
 #ifdef CONFIG_AUTO_COMPLETE
 int env_complete(char *var, int maxv, char *cmdv[], int bufsz, char *buf)
 {
-	int i, nxt, len, vallen, found;
-	const char *lval, *rval;
+	ENTRY *match;
+	int found, idx;
 
+	idx = 0;
 	found = 0;
 	cmdv[0] = NULL;
 
-	len = strlen(var);
-	/* now iterate over the variables and select those that match */
-	for (i=0; env_get_char(i) != '\0'; i=nxt+1) {
+	while ((idx = hmatch_r(var, idx, &match, &env_htab))) {
+		int vallen = strlen(match->key) + 1;
 
-		for (nxt=i; env_get_char(nxt) != '\0'; ++nxt)
-			;
-
-		lval = (char *)env_get_addr(i);
-		rval = strchr(lval, '=');
-		if (rval != NULL) {
-			vallen = rval - lval;
-			rval++;
-		} else
-			vallen = strlen(lval);
-
-		if (len > 0 && (vallen < len || memcmp(lval, var, len) != 0))
-			continue;
-
-		if (found >= maxv - 2 || bufsz < vallen + 1) {
-			cmdv[found++] = "...";
+		if (found >= maxv - 2 || bufsz < vallen)
 			break;
-		}
+
 		cmdv[found++] = buf;
-		memcpy(buf, lval, vallen); buf += vallen; bufsz -= vallen;
-		*buf++ = '\0'; bufsz--;
+		memcpy(buf, match->key, vallen);
+		buf += vallen;
+		bufsz -= vallen;
 	}
 
+	qsort(cmdv, found, sizeof(cmdv[0]), strcmp_compar);
+
+	if (idx)
+		cmdv[found++] = "...";
 	cmdv[found] = NULL;
 	return found;
 }

@@ -33,13 +33,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 /* ------------------------------------------------------------------------- */
 
-/* Prototypes */
-int gunzip(void *, int, unsigned char *, unsigned long *);
-
 int board_early_init_f (void)
 {
-	out32(GPIO0_OR, CFG_NAND0_CE);                 /* set initial outputs     */
-	out32(GPIO0_OR, CFG_NAND1_CE);                 /* set initial outputs     */
+	out32(GPIO0_OR, CONFIG_SYS_NAND0_CE);                 /* set initial outputs     */
+	out32(GPIO0_OR, CONFIG_SYS_NAND1_CE);                 /* set initial outputs     */
 
 	/*
 	 * IRQ 0-15  405GP internally generated; active high; level sensitive
@@ -53,21 +50,21 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5)
 	 * IRQ 31 (EXT IRQ 6)
 	 */
-	mtdcr(uicsr, 0xFFFFFFFF);       /* clear all ints */
-	mtdcr(uicer, 0x00000000);       /* disable all ints */
-	mtdcr(uiccr, 0x00000000);       /* set all to be non-critical*/
-	mtdcr(uicpr, 0xFFFFFF80);       /* set int polarities */
-	mtdcr(uictr, 0x10000000);       /* set int trigger levels */
-	mtdcr(uicvcr, 0x00000001);      /* set vect base=0,INT0 highest priority*/
-	mtdcr(uicsr, 0xFFFFFFFF);       /* clear all ints */
+	mtdcr(UIC0SR, 0xFFFFFFFF);       /* clear all ints */
+	mtdcr(UIC0ER, 0x00000000);       /* disable all ints */
+	mtdcr(UIC0CR, 0x00000000);       /* set all to be non-critical*/
+	mtdcr(UIC0PR, 0xFFFFFF80);       /* set int polarities */
+	mtdcr(UIC0TR, 0x10000000);       /* set int trigger levels */
+	mtdcr(UIC0VCR, 0x00000001);      /* set vect base=0,INT0 highest priority*/
+	mtdcr(UIC0SR, 0xFFFFFFFF);       /* clear all ints */
 
 	/*
 	 * EBC Configuration Register: set ready timeout to 512 ebc-clks -> ca. 15 us
 	 */
 #if 1 /* test-only */
-	mtebc (epcr, 0xa8400000); /* ebc always driven */
+	mtebc (EBC0_CFG, 0xa8400000); /* ebc always driven */
 #else
-	mtebc (epcr, 0x28400000); /* ebc in high-z */
+	mtebc (EBC0_CFG, 0x28400000); /* ebc in high-z */
 #endif
 	return 0;
 }
@@ -85,10 +82,10 @@ int misc_init_r (void)
 {
 	/* adjust flash start and size as well as the offset */
 	gd->bd->bi_flashstart = 0 - flash_info[0].size;
-	gd->bd->bi_flashoffset= flash_info[0].size - CFG_MONITOR_LEN;
+	gd->bd->bi_flashoffset= flash_info[0].size - CONFIG_SYS_MONITOR_LEN;
 #if 0
 	volatile unsigned short *fpga_mode =
-		(unsigned short *)((ulong)CFG_FPGA_BASE_ADDR + CFG_FPGA_CTRL);
+		(unsigned short *)((ulong)CONFIG_SYS_FPGA_BASE_ADDR + CONFIG_SYS_FPGA_CTRL);
 	volatile unsigned char *duart0_mcr =
 		(unsigned char *)((ulong)DUART0_BA + 4);
 	volatile unsigned char *duart1_mcr =
@@ -101,10 +98,10 @@ int misc_init_r (void)
 	int status;
 	int index;
 	int i;
-	unsigned long cntrl0Reg;
+	unsigned long CPC0_CR0Reg;
 
-	dst = malloc(CFG_FPGA_MAX_SIZE);
-	if (gunzip (dst, CFG_FPGA_MAX_SIZE, (uchar *)fpgadata, &len) != 0) {
+	dst = malloc(CONFIG_SYS_FPGA_MAX_SIZE);
+	if (gunzip (dst, CONFIG_SYS_FPGA_MAX_SIZE, (uchar *)fpgadata, &len) != 0) {
 		printf ("GUNZIP ERROR - must RESET board to recover\n");
 		do_reset (NULL, 0, 0, NULL);
 	}
@@ -168,7 +165,7 @@ int misc_init_r (void)
 	/*
 	 * Enable power on PS/2 interface
 	 */
-	*fpga_mode |= CFG_FPGA_CTRL_PS2_RESET;
+	*fpga_mode |= CONFIG_SYS_FPGA_CTRL_PS2_RESET;
 
 	/*
 	 * Enable interrupts in exar duart mcr[3]
@@ -186,7 +183,7 @@ int misc_init_r (void)
 int checkboard (void)
 {
 	char str[64];
-	int i = getenv_r ("serial#", str, sizeof(str));
+	int i = getenv_f("serial#", str, sizeof(str));
 
 	puts ("Board: ");
 
@@ -199,31 +196,6 @@ int checkboard (void)
 	putc ('\n');
 
 	return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-
-long int initdram (int board_type)
-{
-	unsigned long val;
-
-	mtdcr(memcfga, mem_mb0cf);
-	val = mfdcr(memcfgd);
-
-#if 0 /* test-only */
-	for (;;) {
-		NAND_DISABLE_CE(1);
-		udelay(100);
-		NAND_ENABLE_CE(1);
-		udelay(100);
-	}
-#endif
-#if 0
-	printf("\nmb0cf=%x\n", val); /* test-only */
-	printf("strap=%x\n", mfdcr(strap)); /* test-only */
-#endif
-
-	return (4*1024*1024 << ((val & 0x000e0000) >> 17));
 }
 
 /* ------------------------------------------------------------------------- */

@@ -28,19 +28,22 @@
 #include <command.h>
 #include <net.h>
 
-#if defined(CONFIG_I386)
-DECLARE_GLOBAL_DATA_PTR;
-#endif
+#ifdef CONFIG_CMD_GO
 
-int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+/* Allow ports to override the default behavior */
+__attribute__((weak))
+unsigned long do_go_exec (ulong (*entry)(int, char * const []), int argc, char * const argv[])
+{
+	return entry (argc, argv);
+}
+
+int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong	addr, rc;
 	int     rcode = 0;
 
-	if (argc < 2) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 2)
+		return cmd_usage(cmdtp);
 
 	addr = simple_strtoul(argv[1], NULL, 16);
 
@@ -50,21 +53,7 @@ int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	 * pass address parameter as argv[0] (aka command name),
 	 * and all remaining args
 	 */
-#if defined(CONFIG_I386)
-	/*
-	 * x86 does not use a dedicated register to pass the pointer
-	 * to the global_data
-	 */
-	argv[0] = (char *)gd;
-#endif
-#if !defined(CONFIG_NIOS)
-	rc = ((ulong (*)(int, char *[]))addr) (--argc, &argv[1]);
-#else
-	/*
-	 * Nios function pointers are address >> 1
-	 */
-	rc = ((ulong (*)(int, char *[]))(addr>>1)) (--argc, &argv[1]);
-#endif
+	rc = do_go_exec ((void *)addr, argc - 1, argv + 1);
 	if (rc != 0) rcode = 1;
 
 	printf ("## Application terminated, rc = 0x%lX\n", rc);
@@ -74,16 +63,16 @@ int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 /* -------------------------------------------------------------------- */
 
 U_BOOT_CMD(
-	go, CFG_MAXARGS, 1,	do_go,
-	"go      - start application at address 'addr'\n",
+	go, CONFIG_SYS_MAXARGS, 1,	do_go,
+	"start application at address 'addr'",
 	"addr [arg ...]\n    - start application at address 'addr'\n"
-	"      passing 'arg' as arguments\n"
+	"      passing 'arg' as arguments"
 );
 
-extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+#endif
 
 U_BOOT_CMD(
-	reset, CFG_MAXARGS, 1,	do_reset,
-	"reset   - Perform RESET of the CPU\n",
-	NULL
+	reset, 1, 0,	do_reset,
+	"Perform RESET of the CPU",
+	""
 );

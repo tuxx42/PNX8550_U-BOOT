@@ -1,4 +1,4 @@
-/* taken from arch/ppc/kernel/ppc-stub.c */
+/* taken from arch/powerpc/kernel/ppc-stub.c */
 
 /****************************************************************************
 
@@ -92,8 +92,6 @@
 #include <kgdb.h>
 #include <command.h>
 
-#if (CONFIG_COMMANDS & CFG_CMD_KGDB)
-
 #undef KGDB_DEBUG
 
 /*
@@ -107,7 +105,7 @@ static char remcomRegBuffer[BUFMAX];
 static int initialized = 0;
 static int kgdb_active = 0, first_entry = 1;
 static struct pt_regs entry_regs;
-static u_int error_jmp_buf[BUFMAX/2];
+static long error_jmp_buf[BUFMAX/2];
 static int longjmp_on_fault = 0;
 #ifdef KGDB_DEBUG
 static int kdebug = 1;
@@ -134,11 +132,20 @@ hex(unsigned char ch)
 static unsigned char *
 mem2hex(char *mem, char *buf, int count)
 {
+	char *tmp;
 	unsigned char ch;
 
+	/*
+	 * We use the upper half of buf as an intermediate buffer for the
+	 * raw memory copy.  Hex conversion will work against this one.
+	 */
+	tmp = buf + count;
 	longjmp_on_fault = 1;
+
+	memcpy(tmp, mem, count);
+
 	while (count-- > 0) {
-		ch = *mem++;
+		ch = *tmp++;
 		*buf++ = hexchars[ch >> 4];
 		*buf++ = hexchars[ch & 0xf];
 	}
@@ -153,21 +160,33 @@ mem2hex(char *mem, char *buf, int count)
 static char *
 hex2mem(char *buf, char *mem, int count)
 {
-	int i, hexValue;
-	unsigned char ch;
-	char *mem_start = mem;
+	int hexValue;
+	char *tmp_raw, *tmp_hex;
+
+	/*
+	 * We use the upper half of buf as an intermediate buffer for the
+	 * raw memory that is converted from hex.
+	 */
+	tmp_raw = buf + count * 2;
+	tmp_hex = tmp_raw - 1;
 
 	longjmp_on_fault = 1;
-	for (i=0; i<count; i++) {
-		if ((hexValue = hex(*buf++)) < 0)
+	while (tmp_hex >= buf) {
+		tmp_raw--;
+		hexValue = hex(*tmp_hex--);
+		if (hexValue < 0)
 			kgdb_error(KGDBERR_NOTHEXDIG);
-		ch = hexValue << 4;
-		if ((hexValue = hex(*buf++)) < 0)
+		*tmp_raw = hexValue;
+		hexValue = hex(*tmp_hex--);
+		if (hexValue < 0)
 			kgdb_error(KGDBERR_NOTHEXDIG);
-		ch |= hexValue;
-		*mem++ = ch;
+		*tmp_raw |= hexValue << 4;
+
 	}
-	kgdb_flush_cache_range((void *)mem_start, (void *)(mem - 1));
+
+	memcpy(mem, tmp_raw, count);
+
+	kgdb_flush_cache_range((void *)mem, (void *)(mem+count));
 	longjmp_on_fault = 0;
 
 	return buf;
@@ -310,7 +329,7 @@ handle_exception (struct pt_regs *regs)
 	/* probably should check which exception occured as well */
 	if (longjmp_on_fault) {
 		longjmp_on_fault = 0;
-		kgdb_longjmp((long*)error_jmp_buf, KGDBERR_MEMFAULT);
+		kgdb_longjmp(error_jmp_buf, KGDBERR_MEMFAULT);
 		panic("kgdb longjump failed!\n");
 	}
 
@@ -324,7 +343,7 @@ handle_exception (struct pt_regs *regs)
 
 	printf("kgdb: handle_exception; trap [0x%x]\n", kgdb_trap(regs));
 
-	if (kgdb_setjmp((long*)error_jmp_buf) != 0)
+	if (kgdb_setjmp(error_jmp_buf) != 0)
 		panic("kgdb: error or fault in entry init!\n");
 
 	kgdb_enter(regs, &kd);
@@ -379,7 +398,7 @@ handle_exception (struct pt_regs *regs)
 			printf("kgdb:  remcomInBuffer: %s\n", remcomInBuffer);
 #endif
 
-		errnum = kgdb_setjmp((long*)error_jmp_buf);
+		errnum = kgdb_setjmp(error_jmp_buf);
 
 		if (errnum == 0) switch (remcomInBuffer[0]) {
 
@@ -532,7 +551,7 @@ void
 kgdb_error(int errnum)
 {
 	longjmp_on_fault = 0;
-	kgdb_longjmp((long*)error_jmp_buf, errnum);
+	kgdb_longjmp(error_jmp_buf, errnum);
 	panic("kgdb_error: longjmp failed!\n");
 }
 
@@ -565,7 +584,7 @@ breakpoint(void)
 }
 
 int
-do_kgdb(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+do_kgdb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     printf("Entering KGDB mode via exception handler...\n\n");
     kgdb_breakpoint(argc - 1, argv + 1);
@@ -574,8 +593,8 @@ do_kgdb(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 
 U_BOOT_CMD(
-	kgdb, CFG_MAXARGS, 1,	do_kgdb,
-	"kgdb    - enter gdb remote debug mode\n",
+	kgdb, CONFIG_SYS_MAXARGS, 1,	do_kgdb,
+	"enter gdb remote debug mode",
 	"[arg0 arg1 .. argN]\n"
 	"    - executes a breakpoint so that kgdb mode is\n"
 	"      entered via the exception handler. To return\n"
@@ -587,8 +606,3 @@ U_BOOT_CMD(
 	"      program if it is executed (see the \"hello_world\"\n"
 	"      example program in the U-Boot examples directory)."
 );
-#else
-
-int kgdb_not_configured = 1;
-
-#endif /* CFG_CMD_KGDB */

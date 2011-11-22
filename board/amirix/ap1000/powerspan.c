@@ -364,7 +364,7 @@ int EEPROMWrite (unsigned char theI2CAddress, unsigned char theValue)
 			  &theValue, I2C_WRITE);
 }
 
-int do_eeprom (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_eeprom (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	char cmd;
 	int ret_val = 0;
@@ -478,7 +478,7 @@ int do_eeprom (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 }
 
 U_BOOT_CMD (eeprom, 4, 0, do_eeprom,
-	    "eeprom  - read/write/copy to/from the PowerSpan II eeprom\n",
+	    "read/write/copy to/from the PowerSpan II eeprom",
 	    "eeprom r OFF [NUM]\n"
 	    "    - read NUM words starting at OFF\n"
 	    "eeprom w OFF VAL\n"
@@ -487,7 +487,7 @@ U_BOOT_CMD (eeprom, 4, 0, do_eeprom,
 	    "    - store contents of eeprom at address ADD\n"
 	    "eeprom p ADD\n"
 	    "    - put data stored at address ADD into the eeprom\n"
-	    "eeprom d\n" "    - return eeprom to default contents\n");
+	    "eeprom d\n" "    - return eeprom to default contents");
 
 unsigned int PowerSpanRead (unsigned int theOffset)
 {
@@ -690,7 +690,7 @@ int SetTargetImage (int theImageIndex, unsigned int theBlockSize,
 	return 0;
 }
 
-int do_bridge (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_bridge (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	char cmd;
 	int ret_val = 1;

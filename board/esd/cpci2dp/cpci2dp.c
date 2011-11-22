@@ -23,6 +23,7 @@
 
 #include <common.h>
 #include <asm/processor.h>
+#include <asm/io.h>
 #include <command.h>
 #include <malloc.h>
 
@@ -30,18 +31,20 @@ DECLARE_GLOBAL_DATA_PTR;
 
 int board_early_init_f (void)
 {
-	unsigned long cntrl0Reg;
+	unsigned long CPC0_CR0Reg;
 
 	/*
 	 * Setup GPIO pins
 	 */
-	cntrl0Reg = mfdcr(cntrl0);
-	mtdcr(cntrl0, cntrl0Reg | ((CFG_EEPROM_WP | CFG_PB_LED | CFG_SELF_RST | CFG_INTA_FAKE) << 5));
+	CPC0_CR0Reg = mfdcr(CPC0_CR0);
+	mtdcr(CPC0_CR0, CPC0_CR0Reg |
+	      ((CONFIG_SYS_EEPROM_WP | CONFIG_SYS_PB_LED |
+		CONFIG_SYS_SELF_RST | CONFIG_SYS_INTA_FAKE) << 5));
 
 	/* set output pins to high */
-	out32(GPIO0_OR,  CFG_EEPROM_WP);
+	out_be32((void *)GPIO0_OR,  CONFIG_SYS_EEPROM_WP);
 	/* setup for output (LED=off) */
-	out32(GPIO0_TCR, CFG_EEPROM_WP | CFG_PB_LED);
+	out_be32((void *)GPIO0_TCR, CONFIG_SYS_EEPROM_WP | CONFIG_SYS_PB_LED);
 
 	/*
 	 * IRQ 0-15  405GP internally generated; active high; level sensitive
@@ -55,28 +58,21 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5) PCI SLOT 3; active low; level sensitive
 	 * IRQ 31 (EXT IRQ 6) unused
 	 */
-	mtdcr(uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr(uicer, 0x00000000);	/* disable all ints */
-	mtdcr(uiccr, 0x00000000);	/* set all to be non-critical*/
-	mtdcr(uicpr, 0xFFFFFF81);	/* set int polarities */
+	mtdcr(UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr(UIC0ER, 0x00000000);	/* disable all ints */
+	mtdcr(UIC0CR, 0x00000000);	/* set all to be non-critical*/
+	mtdcr(UIC0PR, 0xFFFFFF81);	/* set int polarities */
 
-	mtdcr(uictr, 0x10000000);	/* set int trigger levels */
-	mtdcr(uicvcr, 0x00000001);	/* set vect base=0,INT0 highest priority*/
-	mtdcr(uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr(UIC0TR, 0x10000000);	/* set int trigger levels */
+	mtdcr(UIC0VCR, 0x00000001);	/* set vect base=0,INT0 highest priority*/
+	mtdcr(UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 
 	return 0;
 }
 
-
-int misc_init_f (void)
-{
-	return 0;  /* dummy implementation */
-}
-
-
 int misc_init_r (void)
 {
-	unsigned long cntrl0Reg;
+	unsigned long CPC0_CR0Reg;
 
 	/* adjust flash start and offset */
 	gd->bd->bi_flashstart = 0 - gd->bd->bi_flashsize;
@@ -85,8 +81,8 @@ int misc_init_r (void)
 	/*
 	 * Select cts (and not dsr) on uart1
 	 */
-	cntrl0Reg = mfdcr(cntrl0);
-	mtdcr(cntrl0, cntrl0Reg | 0x00001000);
+	CPC0_CR0Reg = mfdcr(CPC0_CR0);
+	mtdcr(CPC0_CR0, CPC0_CR0Reg | 0x00001000);
 
 	return (0);
 }
@@ -98,7 +94,7 @@ int misc_init_r (void)
 int checkboard (void)
 {
 	char str[64];
-	int i = getenv_r ("serial#", str, sizeof(str));
+	int i = getenv_f("serial#", str, sizeof(str));
 
 	puts ("Board: ");
 
@@ -115,21 +111,7 @@ int checkboard (void)
 	return 0;
 }
 
-/* ------------------------------------------------------------------------- */
-
-long int initdram (int board_type)
-{
-	unsigned long val;
-
-	mtdcr(memcfga, mem_mb0cf);
-	val = mfdcr(memcfgd);
-
-	return (4*1024*1024 << ((val & 0x000e0000) >> 17));
-}
-
-/* ------------------------------------------------------------------------- */
-
-#if defined(CFG_EEPROM_WREN)
+#if defined(CONFIG_SYS_EEPROM_WREN)
 /* Input: <dev_addr>  I2C address of EEPROM device to enable.
  *	   <state>     -1: deliver current state
  *		       0: disable write
@@ -139,23 +121,26 @@ long int initdram (int board_type)
  *		     0/1: current state if <state> was -1.
  */
 int eeprom_write_enable (unsigned dev_addr, int state) {
-	if (CFG_I2C_EEPROM_ADDR != dev_addr) {
+	if (CONFIG_SYS_I2C_EEPROM_ADDR != dev_addr) {
 		return -1;
 	} else {
 		switch (state) {
 		case 1:
 			/* Enable write access, clear bit GPIO_SINT2. */
-			out32(GPIO0_OR, in32(GPIO0_OR) & ~CFG_EEPROM_WP);
+			out_be32((void *)GPIO0_OR,
+				 in_be32((void *)GPIO0_OR) & ~CONFIG_SYS_EEPROM_WP);
 			state = 0;
 			break;
 		case 0:
 			/* Disable write access, set bit GPIO_SINT2. */
-			out32(GPIO0_OR, in32(GPIO0_OR) | CFG_EEPROM_WP);
+			out_be32((void *)GPIO0_OR,
+				 in_be32((void *)GPIO0_OR) | CONFIG_SYS_EEPROM_WP);
 			state = 0;
 			break;
 		default:
 			/* Read current status back. */
-			state = (0 == (in32(GPIO0_OR) & CFG_EEPROM_WP));
+			state = (0 == (in_be32((void *)GPIO0_OR) &
+				       CONFIG_SYS_EEPROM_WP));
 			break;
 		}
 	}
@@ -163,29 +148,29 @@ int eeprom_write_enable (unsigned dev_addr, int state) {
 }
 #endif
 
-#if defined(CFG_EEPROM_WREN)
-int do_eep_wren (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+#if defined(CONFIG_SYS_EEPROM_WREN)
+int do_eep_wren (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int query = argc == 1;
 	int state = 0;
 
 	if (query) {
 		/* Query write access state. */
-		state = eeprom_write_enable (CFG_I2C_EEPROM_ADDR, -1);
+		state = eeprom_write_enable (CONFIG_SYS_I2C_EEPROM_ADDR, -1);
 		if (state < 0) {
 			puts ("Query of write access state failed.\n");
 		} else {
 			printf ("Write access for device 0x%0x is %sabled.\n",
-				CFG_I2C_EEPROM_ADDR, state ? "en" : "dis");
+				CONFIG_SYS_I2C_EEPROM_ADDR, state ? "en" : "dis");
 			state = 0;
 		}
 	} else {
 		if ('0' == argv[1][0]) {
 			/* Disable write access. */
-			state = eeprom_write_enable (CFG_I2C_EEPROM_ADDR, 0);
+			state = eeprom_write_enable (CONFIG_SYS_I2C_EEPROM_ADDR, 0);
 		} else {
 			/* Enable write access. */
-			state = eeprom_write_enable (CFG_I2C_EEPROM_ADDR, 1);
+			state = eeprom_write_enable (CONFIG_SYS_I2C_EEPROM_ADDR, 1);
 		}
 		if (state < 0) {
 			puts ("Setup of write access state failed.\n");
@@ -197,7 +182,7 @@ int do_eep_wren (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(
 	eepwren,	2,	0,	do_eep_wren,
-	"eepwren - Enable / disable / query EEPROM write access\n",
-	NULL
-	);
-#endif /* #if defined(CFG_EEPROM_WREN) */
+	"Enable / disable / query EEPROM write access",
+	""
+);
+#endif /* #if defined(CONFIG_SYS_EEPROM_WREN) */

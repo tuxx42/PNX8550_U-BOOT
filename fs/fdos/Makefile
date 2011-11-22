@@ -3,7 +3,7 @@
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
 # (C) Copyright 2002
-# St‰ubli Faverges - <www.staubli.com>
+# St√§ubli Faverges - <www.staubli.com>
 # Pierre AUBERT  p.aubert@staubli.com
 #
 #
@@ -28,20 +28,20 @@
 
 include $(TOPDIR)/config.mk
 
-LIB	= $(obj)libfdos.a
+LIB	= $(obj)libfdos.o
 
 AOBJS	=
-COBJS	= fat.o vfat.o dev.o fdos.o fs.o subdir.o
+COBJS-$(CONFIG_CMD_FDOS) := fat.o vfat.o dev.o fdos.o fs.o subdir.o
 
-SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS))
+SRCS	:= $(AOBJS:.o=.S) $(COBJS-y:.o=.c)
+OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS-y))
 
 #CPPFLAGS +=
 
 all:	$(LIB) $(AOBJS)
 
 $(LIB):	$(obj).depend $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
 
 
 #########################################################################

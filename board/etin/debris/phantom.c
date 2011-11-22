@@ -18,9 +18,9 @@
 #include <command.h>
 #include <rtc.h>
 
-#if (CONFIG_COMMANDS & CFG_CMD_DATE)
+#if defined(CONFIG_CMD_DATE)
 
-#define RTC_BASE (CFG_NVRAM_BASE_ADDR + 0x7fff8)
+#define RTC_BASE (CONFIG_SYS_NVRAM_BASE_ADDR + 0x7fff8)
 
 #define RTC_YEAR                ( RTC_BASE + 7 )
 #define RTC_MONTH               ( RTC_BASE + 6 )
@@ -159,16 +159,6 @@ void rtc_reset(void)
 	}
 }
 
-inline unsigned bcd2bin (uchar n)
-{
-	return ((((n >> 4) & 0x0F) * 10) + (n & 0x0F));
-}
-
-inline unsigned char bin2bcd (unsigned int n)
-{
-	return (((n / 10) << 4) | (n % 10));
-}
-
 static int get_century_flag(void)
 {
 	int flag = 0;
@@ -182,7 +172,7 @@ static int get_century_flag(void)
 	return flag;
 }
 
-void rtc_get( struct rtc_time *tmp)
+int rtc_get( struct rtc_time *tmp)
 {
 	if (phantom_flag < 0)
 		phantom_flag = get_phantom_flag();
@@ -250,9 +240,11 @@ void rtc_get( struct rtc_time *tmp)
 		tmp->tm_yday = 0;
 		tmp->tm_isdst= 0;
 	}
+
+	return 0;
 }
 
-void rtc_set( struct rtc_time *tmp )
+int rtc_set( struct rtc_time *tmp )
 {
 	if (phantom_flag < 0)
 		phantom_flag = get_phantom_flag();
@@ -305,6 +297,8 @@ void rtc_set( struct rtc_time *tmp )
 		/* unlock clock registers after read */
 		rtc_write( RTC_CONTROLA, ( reg_a  & ~RTC_CA_WRITE ));
 	}
+
+	return 0;
 }
 
 #endif

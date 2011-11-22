@@ -25,15 +25,15 @@
 #include <command.h>
 #include <pci.h>
 #include <pci_ids.h>
-#include <405gp_pci.h>
+#include <asm/4xx_pci.h>
 
 
-#if (CONFIG_COMMANDS & CFG_CMD_BSP)
+#if defined(CONFIG_CMD_BSP)
 
 /*
  * Set device number on pci board
  */
-int do_setdevice(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_setdevice(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int idx = 1;	  /* start at 1 (skip device 0) */
 	pci_dev_t bdf = 0;
@@ -54,15 +54,15 @@ int do_setdevice(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 U_BOOT_CMD(
 	setdevice,	1,	1,	do_setdevice,
-	"setdevice - Set device number on pci adapter boards\n",
-	NULL
+	"Set device number on pci adapter boards",
+	""
 );
 
 
 /*
  * Get device number on pci board
  */
-int do_getdevice(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_getdevice(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	u32 device;
 	char str[32];
@@ -77,8 +77,8 @@ int do_getdevice(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 U_BOOT_CMD(
 	getdevice,	1,	1,	do_getdevice,
-	"getdevice - Get device number and set slot env variable\n",
-	NULL
+	"Get device number and set slot env variable",
+	""
 );
 
 #endif

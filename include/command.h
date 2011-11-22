@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2000
+ * (C) Copyright 2000-2009
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
  * See file CREDITS for list of people who contributed to this
@@ -27,8 +27,15 @@
 #ifndef __COMMAND_H
 #define __COMMAND_H
 
+#include <config.h>
+
 #ifndef NULL
 #define NULL	0
+#endif
+
+/* Default to a width of 8 characters for help message command width */
+#ifndef CONFIG_SYS_HELP_CMD_WIDTH
+#define CONFIG_SYS_HELP_CMD_WIDTH	8
 #endif
 
 #ifndef	__ASSEMBLY__
@@ -41,14 +48,14 @@ struct cmd_tbl_s {
 	int		maxargs;	/* maximum number of arguments	*/
 	int		repeatable;	/* autorepeat allowed?		*/
 					/* Implementation function	*/
-	int		(*cmd)(struct cmd_tbl_s *, int, int, char *[]);
+	int		(*cmd)(struct cmd_tbl_s *, int, int, char * const []);
 	char		*usage;		/* Usage message	(short)	*/
-#ifdef	CFG_LONGHELP
+#ifdef	CONFIG_SYS_LONGHELP
 	char		*help;		/* Help  message	(long)	*/
 #endif
 #ifdef CONFIG_AUTO_COMPLETE
 	/* do auto completion on the arguments */
-	int		(*complete)(int argc, char *argv[], char last_char, int maxv, char *cmdv[]);
+	int		(*complete)(int argc, char * const argv[], char last_char, int maxv, char *cmdv[]);
 #endif
 };
 
@@ -59,10 +66,15 @@ extern cmd_tbl_t  __u_boot_cmd_end;
 
 
 /* common/command.c */
+int _do_help (cmd_tbl_t *cmd_start, int cmd_items, cmd_tbl_t * cmdtp, int
+	      flag, int argc, char * const argv[]);
 cmd_tbl_t *find_cmd(const char *cmd);
+cmd_tbl_t *find_cmd_tbl (const char *cmd, cmd_tbl_t *table, int table_len);
+
+extern int cmd_usage(const cmd_tbl_t *cmdtp);
 
 #ifdef CONFIG_AUTO_COMPLETE
-extern void install_auto_complete(void);
+extern int var_complete(int argc, char * const argv[], char last_char, int maxv, char *cmdv[]);
 extern int cmd_auto_complete(const char *const prompt, char *buf, int *np, int *colp);
 #endif
 
@@ -71,10 +83,31 @@ extern int cmd_auto_complete(const char *const prompt, char *buf, int *np, int *
  *
  * All commands use a common argument format:
  *
- * void function (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+ * void function (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
  */
 
-typedef	void 	command_t (cmd_tbl_t *, int, int, char *[]);
+#if defined(CONFIG_CMD_MEMORY)		\
+    || defined(CONFIG_CMD_I2C)		\
+    || defined(CONFIG_CMD_ITEST)	\
+    || defined(CONFIG_CMD_PCI)		\
+    || defined(CONFIG_CMD_PORTIO)
+#define CMD_DATA_SIZE
+extern int cmd_get_data_size(char* arg, int default_size);
+#endif
+
+#ifdef CONFIG_CMD_BOOTD
+extern int do_bootd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+#endif
+#ifdef CONFIG_CMD_BOOTM
+extern int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+extern int bootm_maybe_autostart(cmd_tbl_t *cmdtp, const char *cmd);
+#else
+static inline int bootm_maybe_autostart(cmd_tbl_t *cmdtp, const char *cmd)
+{
+	return 0;
+}
+#endif
+extern int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 
 #endif	/* __ASSEMBLY__ */
 
@@ -84,24 +117,33 @@ typedef	void 	command_t (cmd_tbl_t *, int, int, char *[]);
 #define CMD_FLAG_REPEAT		0x0001	/* repeat last command		*/
 #define CMD_FLAG_BOOTD		0x0002	/* command is from bootd	*/
 
-/*
- * Configurable monitor commands definitions have been moved
- * to include/cmd_confdefs.h
- */
-
-
 #define Struct_Section  __attribute__ ((unused,section (".u_boot_cmd")))
 
-#ifdef  CFG_LONGHELP
+#ifdef CONFIG_AUTO_COMPLETE
+# define _CMD_COMPLETE(x) x,
+#else
+# define _CMD_COMPLETE(x)
+#endif
+#ifdef CONFIG_SYS_LONGHELP
+# define _CMD_HELP(x) x,
+#else
+# define _CMD_HELP(x)
+#endif
+
+#define U_BOOT_CMD_MKENT_COMPLETE(name,maxargs,rep,cmd,usage,help,comp) \
+	{#name, maxargs, rep, cmd, usage, _CMD_HELP(help) _CMD_COMPLETE(comp)}
+
+#define U_BOOT_CMD_MKENT(name,maxargs,rep,cmd,usage,help) \
+	U_BOOT_CMD_MKENT_COMPLETE(name,maxargs,rep,cmd,usage,help,NULL)
+
+#define U_BOOT_CMD_COMPLETE(name,maxargs,rep,cmd,usage,help,comp) \
+	cmd_tbl_t __u_boot_cmd_##name Struct_Section = \
+		U_BOOT_CMD_MKENT_COMPLETE(name,maxargs,rep,cmd,usage,help,comp)
 
 #define U_BOOT_CMD(name,maxargs,rep,cmd,usage,help) \
-cmd_tbl_t __u_boot_cmd_##name Struct_Section = {#name, maxargs, rep, cmd, usage, help}
+	U_BOOT_CMD_COMPLETE(name,maxargs,rep,cmd,usage,help,NULL)
 
-#else	/* no long help info */
-
-#define U_BOOT_CMD(name,maxargs,rep,cmd,usage,help) \
-cmd_tbl_t __u_boot_cmd_##name Struct_Section = {#name, maxargs, rep, cmd, usage}
-
-#endif	/* CFG_LONGHELP */
-
+#if defined(CONFIG_NEEDS_MANUAL_RELOC)
+void fixup_cmdtable(cmd_tbl_t *cmdtp, int size);
+#endif
 #endif	/* __COMMAND_H */

@@ -30,7 +30,7 @@
 #endif
 
 #define SECTSZ		(64 * 1024)
-flash_info_t flash_info[CFG_MAX_FLASH_BANKS];
+flash_info_t flash_info[CONFIG_SYS_MAX_FLASH_BANKS];
 
 /*----------------------------------------------------------------------*/
 unsigned long flash_init (void)
@@ -39,18 +39,18 @@ unsigned long flash_init (void)
 	unsigned long addr;
 	flash_info_t *fli = &flash_info[0];
 
-	fli->size = CFG_FLASH_SIZE;
-	fli->sector_count = CFG_MAX_FLASH_SECT;
+	fli->size = CONFIG_SYS_FLASH_SIZE;
+	fli->sector_count = CONFIG_SYS_MAX_FLASH_SECT;
 	fli->flash_id = FLASH_MAN_AMD + FLASH_AMDLV065D;
 
-	addr = CFG_FLASH_BASE;
+	addr = CONFIG_SYS_FLASH_BASE;
 	for (i = 0; i < fli->sector_count; ++i) {
 		fli->start[i] = addr;
 		addr += SECTSZ;
 		fli->protect[i] = 1;
 	}
 
-	return (CFG_FLASH_SIZE);
+	return (CONFIG_SYS_FLASH_SIZE);
 }
 /*--------------------------------------------------------------------*/
 void flash_print_info (flash_info_t * info)
@@ -122,12 +122,12 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 	for (sect = s_first; sect <= s_last; sect++) {
 		if (info->protect[sect] == 0) {	/* not protected */
 			addr2 = (unsigned char *) info->start[sect];
-			writeb (addr, 0xaa);
-			writeb (addr,  0x55);
-			writeb (addr,  0x80);
-			writeb (addr,  0xaa);
-			writeb (addr,  0x55);
-			writeb (addr2, 0x30);
+			writeb (0xaa, addr);
+			writeb (0x55, addr);
+			writeb (0x80, addr);
+			writeb (0xaa, addr);
+			writeb (0x55, addr);
+			writeb (0x30, addr2);
 			/* Now just wait for 0xff & provide some user
 			 * feedback while we wait.
 			 */
@@ -135,7 +135,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 			while ( readb (addr2) != 0xff) {
 				udelay (1000 * 1000);
 				putc ('.');
-				if (get_timer (start) > CFG_FLASH_ERASE_TOUT) {
+				if (get_timer (start) > CONFIG_SYS_FLASH_ERASE_TOUT) {
 					printf ("timeout\n");
 					return 1;
 				}
@@ -169,15 +169,15 @@ int write_buff (flash_info_t * info, uchar * src, ulong addr, ulong cnt)
 			return (2);
 		}
 
-		writeb (cmd,  0xaa);
-		writeb (cmd,  0x55);
-		writeb (cmd,  0xa0);
+		writeb (0xaa, cmd);
+		writeb (0x55, cmd);
+		writeb (0xa0, cmd);
 		writeb (dst, b);
 
 		/* Verify write */
 		start = get_timer (0);
 		while (readb (dst) != b) {
-			if (get_timer (start) > CFG_FLASH_WRITE_TOUT) {
+			if (get_timer (start) > CONFIG_SYS_FLASH_WRITE_TOUT) {
 				return 1;
 			}
 		}

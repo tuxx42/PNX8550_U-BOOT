@@ -27,20 +27,20 @@
 
 include $(TOPDIR)/config.mk
 
-LIB	= $(obj)libreiserfs.a
+LIB	= $(obj)libreiserfs.o
 
 AOBJS	=
-COBJS	= reiserfs.o dev.o mode_string.o
+COBJS-$(CONFIG_CMD_REISER) := reiserfs.o dev.o mode_string.o
 
-SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS))
+SRCS	:= $(AOBJS:.o=.S) $(COBJS-y:.o=.c)
+OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS-y))
 
 #CPPFLAGS +=
 
 all:	$(LIB) $(AOBJS)
 
 $(LIB):	$(obj).depend $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
 
 #########################################################################
 

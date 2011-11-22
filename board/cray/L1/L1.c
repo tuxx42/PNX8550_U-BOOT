@@ -23,7 +23,7 @@
 
 #include <common.h>
 #include <asm/processor.h>
-#include <405gp_i2c.h>
+#include <asm/ppc4xx-i2c.h>
 #include <command.h>
 #include <rtc.h>
 #include <post.h>
@@ -113,13 +113,13 @@ int board_early_init_f (void)
 {
 	/* Running from ROM: global data is still READONLY */
 	init_sdram ();
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr (uicer, 0x00000000);	/* disable all ints */
-	mtdcr (uiccr, 0x00000020);	/* set all but FPGA SMI to be non-critical */
-	mtdcr (uicpr, 0xFFFFFFE0);	/* set int polarities */
-	mtdcr (uictr, 0x10000000);	/* set int trigger levels */
-	mtdcr (uicvcr, 0x00000001);	/* set vect base=0,INT0 highest priority */
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0ER, 0x00000000);	/* disable all ints */
+	mtdcr (UIC0CR, 0x00000020);	/* set all but FPGA SMI to be non-critical */
+	mtdcr (UIC0PR, 0xFFFFFFE0);	/* set int polarities */
+	mtdcr (UIC0TR, 0x10000000);	/* set int trigger levels */
+	mtdcr (UIC0VCR, 0x00000001);	/* set vect base=0,INT0 highest priority */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 	return 0;
 }
 
@@ -139,8 +139,15 @@ int misc_init_r (void)
 	struct rtc_time tm;
 	char bootcmd[32];
 
-	hdr = (image_header_t *) (CFG_MONITOR_BASE - sizeof (image_header_t));
-	timestamp = (time_t) hdr->ih_time;
+	hdr = (image_header_t *) (CONFIG_SYS_MONITOR_BASE - image_get_header_size ());
+#if defined(CONFIG_FIT)
+	if (genimg_get_format ((void *)hdr) != IMAGE_FORMAT_LEGACY) {
+		puts ("Non legacy image format not supported\n");
+		return -1;
+	}
+#endif
+
+	timestamp = (time_t)image_get_time (hdr);
 	to_tm (timestamp, &tm);
 	printf ("Welcome to U-Boot on Cray L1. Compiled %4d-%02d-%02d  %2d:%02d:%02d (UTC)\n", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
@@ -157,26 +164,20 @@ int misc_init_r (void)
 			setenv ("ethaddr", e);
 		}
 	}
-	sprintf (bootcmd,"autoscript %X",(unsigned)bootscript);
+	sprintf (bootcmd,"source %X",(unsigned)bootscript);
 	setenv ("bootcmd", bootcmd);
 	return (0);
 }
 
 /* ------------------------------------------------------------------------- */
-long int initdram (int board_type)
-{
-	return (L1_MEMSIZE);
-}
-
-/* ------------------------------------------------------------------------- */
 /* stubs so we can print dates w/o any nvram RTC.*/
-void rtc_get (struct rtc_time *tmp)
+int rtc_get (struct rtc_time *tmp)
 {
-	return;
+	return 0;
 }
-void rtc_set (struct rtc_time *tmp)
+int rtc_set (struct rtc_time *tmp)
 {
-	return;
+	return 0;
 }
 void rtc_reset (void)
 {
@@ -191,40 +192,40 @@ static void init_sdram (void)
  unsigned long tmp;
 
 	/* write SDRAM bank 0 register */
-	mtdcr (memcfga, mem_mb0cf);
-	mtdcr (memcfgd, 0x00062001);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B0CR);
+	mtdcr (SDRAM0_CFGDATA, 0x00062001);
 
 /* Set the SDRAM Timing reg, SDTR1 and the refresh timer reg, RTR.	*/
 /* To set the appropriate timings, we need to know the SDRAM speed.	*/
 /* We can use the PLB speed since the SDRAM speed is the same as	*/
 /* the PLB speed. The PLB speed is the FBK divider times the		*/
-/* 405GP reference clock, which on the L1 is 25Mhz.			*/
-/* Thus, if FBK div is 2, SDRAM is 50Mhz; if FBK div is 3, SDRAM is	*/
-/* 150Mhz; if FBK is 3, SDRAM is 150Mhz.				*/
+/* 405GP reference clock, which on the L1 is 25MHz.			*/
+/* Thus, if FBK div is 2, SDRAM is 50MHz; if FBK div is 3, SDRAM is	*/
+/* 150MHz; if FBK is 3, SDRAM is 150MHz.				*/
 
 	/* divisor = ((mfdcr(strap)>> 28) & 0x3); */
 
-/* write SDRAM timing for 100Mhz. */
-	mtdcr (memcfga, mem_sdtr1);
-	mtdcr (memcfgd, 0x0086400D);
+/* write SDRAM timing for 100MHz. */
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_TR);
+	mtdcr (SDRAM0_CFGDATA, 0x0086400D);
 
 /* write SDRAM refresh interval register */
-	mtdcr (memcfga, mem_rtr);
-	mtdcr (memcfgd, 0x05F00000);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_RTR);
+	mtdcr (SDRAM0_CFGDATA, 0x05F00000);
 	udelay (200);
 
 /* sdram controller.*/
-	mtdcr (memcfga, mem_mcopt1);
-	mtdcr (memcfgd, 0x90800000);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_CFG);
+	mtdcr (SDRAM0_CFGDATA, 0x90800000);
 	udelay (200);
 
 /* initially, disable ECC on all banks */
 	udelay (200);
-	mtdcr (memcfga, mem_ecccf);
-	tmp = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_ECCCFG);
+	tmp = mfdcr (SDRAM0_CFGDATA);
 	tmp &= 0xff0fffff;
-	mtdcr (memcfga, mem_ecccf);
-	mtdcr (memcfgd, tmp);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_ECCCFG);
+	mtdcr (SDRAM0_CFGDATA, tmp);
 
 	return;
 }
@@ -238,7 +239,7 @@ int testdram (void)
 	uint *pend = (uint *) L1_MEMSIZE;
 	uint *p;
 
-	if (getenv_r("booted",NULL,0) <= 0)
+	if (getenv_f("booted",NULL,0) <= 0)
 	{
 		printf ("testdram..");
 	/*AA*/
@@ -275,18 +276,18 @@ int testdram (void)
 	}
 	printf ("Enable ECC..");
 
-	mtdcr (memcfga, mem_mcopt1);
-	tmp = (mfdcr (memcfgd) & ~0xFFE00000) | 0x90800000;
-	mtdcr (memcfga, mem_mcopt1);
-	mtdcr (memcfgd, tmp);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_CFG);
+	tmp = (mfdcr (SDRAM0_CFGDATA) & ~0xFFE00000) | 0x90800000;
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_CFG);
+	mtdcr (SDRAM0_CFGDATA, tmp);
 	udelay (600);
 	for (p = (unsigned long) 0; ((unsigned long) p < L1_MEMSIZE); *p++ = 0L)
 		;
 	udelay (400);
-	mtdcr (memcfga, mem_ecccf);
-	tmp = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_ECCCFG);
+	tmp = mfdcr (SDRAM0_CFGDATA);
 	tmp |= 0x00800000;
-	mtdcr (memcfgd, tmp);
+	mtdcr (SDRAM0_CFGDATA, tmp);
 	udelay (400);
 	printf ("enabled.\n");
 	return (0);

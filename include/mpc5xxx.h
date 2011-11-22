@@ -1,7 +1,7 @@
 /*
  * include/asm-ppc/mpc5xxx.h
  *
- * Prototypes, etc. for the Motorola MGT5xxx/MPC5xxx
+ * Prototypes, etc. for the Motorola MPC5xxx
  * embedded cpu chips
  *
  * 2003 (c) MontaVista, Software, Inc.
@@ -30,114 +30,87 @@
 #ifndef __ASMPPC_MPC5XXX_H
 #define __ASMPPC_MPC5XXX_H
 
+#include <asm/types.h>
+
 /* Processor name */
-#if defined(CONFIG_MPC5200)
 #define CPU_ID_STR	"MPC5200"
-#elif defined(CONFIG_MGT5100)
-#define CPU_ID_STR	"MGT5100"
-#endif
 
 /* Exception offsets (PowerPC standard) */
 #define EXC_OFF_SYS_RESET	0x0100
+#define _START_OFFSET		EXC_OFF_SYS_RESET
 
 /* useful macros for manipulating CSx_START/STOP */
-#if defined(CONFIG_MGT5100)
-#define START_REG(start)	((start) >> 15)
-#define STOP_REG(start, size)	(((start) + (size) - 1) >> 15)
-#elif defined(CONFIG_MPC5200)
 #define START_REG(start)	((start) >> 16)
 #define STOP_REG(start, size)	(((start) + (size) - 1) >> 16)
-#endif
 
 /* Internal memory map */
 
-#define MPC5XXX_CS0_START	(CFG_MBAR + 0x0004)
-#define MPC5XXX_CS0_STOP	(CFG_MBAR + 0x0008)
-#define MPC5XXX_CS1_START	(CFG_MBAR + 0x000c)
-#define MPC5XXX_CS1_STOP	(CFG_MBAR + 0x0010)
-#define MPC5XXX_CS2_START	(CFG_MBAR + 0x0014)
-#define MPC5XXX_CS2_STOP	(CFG_MBAR + 0x0018)
-#define MPC5XXX_CS3_START	(CFG_MBAR + 0x001c)
-#define MPC5XXX_CS3_STOP	(CFG_MBAR + 0x0020)
-#define MPC5XXX_CS4_START	(CFG_MBAR + 0x0024)
-#define MPC5XXX_CS4_STOP	(CFG_MBAR + 0x0028)
-#define MPC5XXX_CS5_START	(CFG_MBAR + 0x002c)
-#define MPC5XXX_CS5_STOP	(CFG_MBAR + 0x0030)
-#define MPC5XXX_BOOTCS_START	(CFG_MBAR + 0x004c)
-#define MPC5XXX_BOOTCS_STOP	(CFG_MBAR + 0x0050)
-#define MPC5XXX_ADDECR		(CFG_MBAR + 0x0054)
+#define MPC5XXX_CS0_START	(CONFIG_SYS_MBAR + 0x0004)
+#define MPC5XXX_CS0_STOP	(CONFIG_SYS_MBAR + 0x0008)
+#define MPC5XXX_CS1_START	(CONFIG_SYS_MBAR + 0x000c)
+#define MPC5XXX_CS1_STOP	(CONFIG_SYS_MBAR + 0x0010)
+#define MPC5XXX_CS2_START	(CONFIG_SYS_MBAR + 0x0014)
+#define MPC5XXX_CS2_STOP	(CONFIG_SYS_MBAR + 0x0018)
+#define MPC5XXX_CS3_START	(CONFIG_SYS_MBAR + 0x001c)
+#define MPC5XXX_CS3_STOP	(CONFIG_SYS_MBAR + 0x0020)
+#define MPC5XXX_CS4_START	(CONFIG_SYS_MBAR + 0x0024)
+#define MPC5XXX_CS4_STOP	(CONFIG_SYS_MBAR + 0x0028)
+#define MPC5XXX_CS5_START	(CONFIG_SYS_MBAR + 0x002c)
+#define MPC5XXX_CS5_STOP	(CONFIG_SYS_MBAR + 0x0030)
+#define MPC5XXX_BOOTCS_START	(CONFIG_SYS_MBAR + 0x004c)
+#define MPC5XXX_BOOTCS_STOP	(CONFIG_SYS_MBAR + 0x0050)
+#define MPC5XXX_ADDECR		(CONFIG_SYS_MBAR + 0x0054)
 
-#if defined(CONFIG_MGT5100)
-#define MPC5XXX_SDRAM_START	(CFG_MBAR + 0x0034)
-#define MPC5XXX_SDRAM_STOP	(CFG_MBAR + 0x0038)
-#define MPC5XXX_PCI1_START	(CFG_MBAR + 0x003c)
-#define MPC5XXX_PCI1_STOP	(CFG_MBAR + 0x0040)
-#define MPC5XXX_PCI2_START	(CFG_MBAR + 0x0044)
-#define MPC5XXX_PCI2_STOP	(CFG_MBAR + 0x0048)
-#elif defined(CONFIG_MPC5200)
-#define MPC5XXX_CS6_START	(CFG_MBAR + 0x0058)
-#define MPC5XXX_CS6_STOP	(CFG_MBAR + 0x005c)
-#define MPC5XXX_CS7_START	(CFG_MBAR + 0x0060)
-#define MPC5XXX_CS7_STOP	(CFG_MBAR + 0x0064)
-#define MPC5XXX_SDRAM_CS0CFG	(CFG_MBAR + 0x0034)
-#define MPC5XXX_SDRAM_CS1CFG	(CFG_MBAR + 0x0038)
-#endif
+#define MPC5XXX_CS6_START	(CONFIG_SYS_MBAR + 0x0058)
+#define MPC5XXX_CS6_STOP	(CONFIG_SYS_MBAR + 0x005c)
+#define MPC5XXX_CS7_START	(CONFIG_SYS_MBAR + 0x0060)
+#define MPC5XXX_CS7_STOP	(CONFIG_SYS_MBAR + 0x0064)
+#define MPC5XXX_SDRAM_CS0CFG	(CONFIG_SYS_MBAR + 0x0034)
+#define MPC5XXX_SDRAM_CS1CFG	(CONFIG_SYS_MBAR + 0x0038)
 
-#define MPC5XXX_SDRAM		(CFG_MBAR + 0x0100)
-#define MPC5XXX_CDM		(CFG_MBAR + 0x0200)
-#define MPC5XXX_LPB		(CFG_MBAR + 0x0300)
-#define MPC5XXX_ICTL		(CFG_MBAR + 0x0500)
-#define MPC5XXX_GPT		(CFG_MBAR + 0x0600)
-#define MPC5XXX_GPIO		(CFG_MBAR + 0x0b00)
-#define MPC5XXX_WU_GPIO         (CFG_MBAR + 0x0c00)
-#define MPC5XXX_PCI		(CFG_MBAR + 0x0d00)
-#define MPC5XXX_SPI		(CFG_MBAR + 0x0f00)
-#define MPC5XXX_USB		(CFG_MBAR + 0x1000)
-#define MPC5XXX_SDMA		(CFG_MBAR + 0x1200)
-#define MPC5XXX_XLBARB		(CFG_MBAR + 0x1f00)
+#define MPC5XXX_SDRAM		(CONFIG_SYS_MBAR + 0x0100)
+#define MPC5XXX_CDM		(CONFIG_SYS_MBAR + 0x0200)
+#define MPC5XXX_LPB		(CONFIG_SYS_MBAR + 0x0300)
+#define MPC5XXX_ICTL		(CONFIG_SYS_MBAR + 0x0500)
+#define MPC5XXX_GPT		(CONFIG_SYS_MBAR + 0x0600)
+#define MPC5XXX_GPIO		(CONFIG_SYS_MBAR + 0x0b00)
+#define MPC5XXX_WU_GPIO         (CONFIG_SYS_MBAR + 0x0c00)
+#define MPC5XXX_PCI		(CONFIG_SYS_MBAR + 0x0d00)
+#define MPC5XXX_SPI		(CONFIG_SYS_MBAR + 0x0f00)
+#define MPC5XXX_USB		(CONFIG_SYS_MBAR + 0x1000)
+#define MPC5XXX_SDMA		(CONFIG_SYS_MBAR + 0x1200)
+#define MPC5XXX_XLBARB		(CONFIG_SYS_MBAR + 0x1f00)
 
-#if defined(CONFIG_MGT5100)
-#define	MPC5XXX_PSC1		(CFG_MBAR + 0x2000)
-#define	MPC5XXX_PSC2		(CFG_MBAR + 0x2400)
-#define	MPC5XXX_PSC3		(CFG_MBAR + 0x2800)
-#elif defined(CONFIG_MPC5200)
-#define	MPC5XXX_PSC1		(CFG_MBAR + 0x2000)
-#define	MPC5XXX_PSC2		(CFG_MBAR + 0x2200)
-#define	MPC5XXX_PSC3		(CFG_MBAR + 0x2400)
-#define	MPC5XXX_PSC4		(CFG_MBAR + 0x2600)
-#define	MPC5XXX_PSC5		(CFG_MBAR + 0x2800)
-#define	MPC5XXX_PSC6		(CFG_MBAR + 0x2c00)
-#endif
+#define	MPC5XXX_PSC1		(CONFIG_SYS_MBAR + 0x2000)
+#define	MPC5XXX_PSC2		(CONFIG_SYS_MBAR + 0x2200)
+#define	MPC5XXX_PSC3		(CONFIG_SYS_MBAR + 0x2400)
+#define	MPC5XXX_PSC4		(CONFIG_SYS_MBAR + 0x2600)
+#define	MPC5XXX_PSC5		(CONFIG_SYS_MBAR + 0x2800)
+#define	MPC5XXX_PSC6		(CONFIG_SYS_MBAR + 0x2c00)
 
-#define	MPC5XXX_FEC		(CFG_MBAR + 0x3000)
-#define MPC5XXX_ATA             (CFG_MBAR + 0x3A00)
+#define	MPC5XXX_FEC		(CONFIG_SYS_MBAR + 0x3000)
+#define MPC5XXX_ATA             (CONFIG_SYS_MBAR + 0x3A00)
 
-#define MPC5XXX_I2C1		(CFG_MBAR + 0x3D00)
-#define MPC5XXX_I2C2		(CFG_MBAR + 0x3D40)
+#define MPC5XXX_I2C1		(CONFIG_SYS_MBAR + 0x3D00)
+#define MPC5XXX_I2C2		(CONFIG_SYS_MBAR + 0x3D40)
 
-#if defined(CONFIG_MGT5100)
-#define MPC5XXX_SRAM		(CFG_MBAR + 0x4000)
-#define MPC5XXX_SRAM_SIZE	(8*1024)
-#elif defined(CONFIG_MPC5200)
-#define MPC5XXX_SRAM		(CFG_MBAR + 0x8000)
+#define MPC5XXX_SRAM		(CONFIG_SYS_MBAR + 0x8000)
 #define MPC5XXX_SRAM_SIZE	(16*1024)
-#endif
 
 /* SDRAM Controller */
 #define MPC5XXX_SDRAM_MODE	(MPC5XXX_SDRAM + 0x0000)
 #define MPC5XXX_SDRAM_CTRL	(MPC5XXX_SDRAM + 0x0004)
 #define MPC5XXX_SDRAM_CONFIG1	(MPC5XXX_SDRAM + 0x0008)
 #define MPC5XXX_SDRAM_CONFIG2	(MPC5XXX_SDRAM + 0x000c)
-#if defined(CONFIG_MGT5100)
-#define MPC5XXX_SDRAM_XLBSEL	(MPC5XXX_SDRAM + 0x0010)
-#endif
 #define MPC5XXX_SDRAM_SDELAY	(MPC5XXX_SDRAM + 0x0090)
 
 /* Clock Distribution Module */
 #define MPC5XXX_CDM_JTAGID	(MPC5XXX_CDM + 0x0000)
 #define MPC5XXX_CDM_PORCFG	(MPC5XXX_CDM + 0x0004)
+#define MPC5XXX_CDM_BRDCRMB  	(MPC5XXX_CDM + 0x0008)
 #define MPC5XXX_CDM_CFG		(MPC5XXX_CDM + 0x000c)
 #define MPC5XXX_CDM_48_FDC	(MPC5XXX_CDM + 0x0010)
+#define MPC5XXX_CDM_CLK_ENA	(MPC5XXX_CDM + 0x0014)
 #define MPC5XXX_CDM_SRESET	(MPC5XXX_CDM + 0x0020)
 
 /* Local Plus Bus interface */
@@ -150,19 +123,15 @@
 #define MPC5XXX_BOOTCS_CFG	MPC5XXX_CS0_CFG
 #define MPC5XXX_CS_CTRL		(MPC5XXX_LPB + 0x0018)
 #define MPC5XXX_CS_STATUS	(MPC5XXX_LPB + 0x001c)
-#if defined(CONFIG_MPC5200)
 #define MPC5XXX_CS6_CFG		(MPC5XXX_LPB + 0x0020)
 #define MPC5XXX_CS7_CFG		(MPC5XXX_LPB + 0x0024)
 #define MPC5XXX_CS_BURST	(MPC5XXX_LPB + 0x0028)
 #define MPC5XXX_CS_DEADCYCLE	(MPC5XXX_LPB + 0x002c)
-#endif
 
-#if defined(CONFIG_MPC5200)
 /* XLB Arbiter registers */
 #define MPC5XXX_XLBARB_CFG		(MPC5XXX_XLBARB + 0x40)
 #define MPC5XXX_XLBARB_MPRIEN	(MPC5XXX_XLBARB + 0x64)
 #define MPC5XXX_XLBARB_MPRIVAL	(MPC5XXX_XLBARB + 0x68)
-#endif
 
 /* GPIO registers */
 #define MPC5XXX_GPS_PORT_CONFIG	(MPC5XXX_GPIO + 0x0000)
@@ -188,21 +157,56 @@
 #define MPC5XXX_WU_GPIO_ENABLE  (MPC5XXX_WU_GPIO + 0x0000)
 #define MPC5XXX_WU_GPIO_ODE     (MPC5XXX_WU_GPIO + 0x0004)
 #define MPC5XXX_WU_GPIO_DIR     (MPC5XXX_WU_GPIO + 0x0008)
-#define MPC5XXX_WU_GPIO_DATA    (MPC5XXX_WU_GPIO + 0x000c)
+#define MPC5XXX_WU_GPIO_DATA_O  (MPC5XXX_WU_GPIO + 0x000c)
+#define MPC5XXX_WU_GPIO_DATA_I  (MPC5XXX_WU_GPIO + 0x0020)
+
+/* GPIO pins, for Rev.B chip */
+#define GPIO_WKUP_7		0x80000000UL
+#define GPIO_PSC6_0		0x10000000UL
+#define GPIO_PSC3_9		0x04000000UL
+#define GPIO_PSC1_4		0x01000000UL
+#define GPIO_PSC2_4		0x02000000UL
+
+#define MPC5XXX_GPIO_SIMPLE_PSC6_3   0x20000000UL
+#define MPC5XXX_GPIO_SIMPLE_PSC6_2   0x10000000UL
+#define MPC5XXX_GPIO_SIMPLE_PSC3_7   0x00002000UL
+#define MPC5XXX_GPIO_SIMPLE_PSC3_6   0x00001000UL
+#define MPC5XXX_GPIO_SIMPLE_PSC3_3   0x00000800UL
+#define MPC5XXX_GPIO_SIMPLE_PSC3_2   0x00000400UL
+#define MPC5XXX_GPIO_SIMPLE_PSC3_1   0x00000200UL
+#define MPC5XXX_GPIO_SIMPLE_PSC3_0   0x00000100UL
+#define MPC5XXX_GPIO_SIMPLE_PSC2_3   0x00000080UL
+#define MPC5XXX_GPIO_SIMPLE_PSC2_2   0x00000040UL
+#define MPC5XXX_GPIO_SIMPLE_PSC2_1   0x00000020UL
+#define MPC5XXX_GPIO_SIMPLE_PSC2_0   0x00000010UL
+#define MPC5XXX_GPIO_SIMPLE_PSC1_3   0x00000008UL
+#define MPC5XXX_GPIO_SIMPLE_PSC1_2   0x00000004UL
+#define MPC5XXX_GPIO_SIMPLE_PSC1_1   0x00000002UL
+#define MPC5XXX_GPIO_SIMPLE_PSC1_0   0x00000001UL
+
+#define MPC5XXX_GPIO_SINT_ETH_16     0x80
+#define MPC5XXX_GPIO_SINT_ETH_15     0x40
+#define MPC5XXX_GPIO_SINT_ETH_14     0x20
+#define MPC5XXX_GPIO_SINT_ETH_13     0x10
+#define MPC5XXX_GPIO_SINT_USB1_9     0x08
+#define MPC5XXX_GPIO_SINT_PSC3_8     0x04
+#define MPC5XXX_GPIO_SINT_PSC3_5     0x02
+#define MPC5XXX_GPIO_SINT_PSC3_4     0x01
+
+#define MPC5XXX_GPIO_WKUP_7          0x80
+#define MPC5XXX_GPIO_WKUP_6          0x40
+#define MPC5XXX_GPIO_WKUP_PSC6_1     0x20
+#define MPC5XXX_GPIO_WKUP_PSC6_0     0x10
+#define MPC5XXX_GPIO_WKUP_ETH17      0x08
+#define MPC5XXX_GPIO_WKUP_PSC3_9     0x04
+#define MPC5XXX_GPIO_WKUP_PSC2_4     0x02
+#define MPC5XXX_GPIO_WKUP_PSC1_4     0x01
 
 /* PCI registers */
 #define MPC5XXX_PCI_CMD		(MPC5XXX_PCI + 0x04)
 #define MPC5XXX_PCI_CFG		(MPC5XXX_PCI + 0x0c)
 #define MPC5XXX_PCI_BAR0	(MPC5XXX_PCI + 0x10)
 #define MPC5XXX_PCI_BAR1	(MPC5XXX_PCI + 0x14)
-#if defined(CONFIG_MGT5100)
-#define MPC5XXX_PCI_CTRL	(MPC5XXX_PCI + 0x68)
-#define MPC5XXX_PCI_VALMSKR	(MPC5XXX_PCI + 0x6c)
-#define MPC5XXX_PCI_VALMSKW	(MPC5XXX_PCI + 0x70)
-#define MPC5XXX_PCI_SUBW1	(MPC5XXX_PCI + 0x74)
-#define MPC5XXX_PCI_SUBW2	(MPC5XXX_PCI + 0x78)
-#define MPC5XXX_PCI_WINCOMMAND	(MPC5XXX_PCI + 0x7c)
-#elif defined(CONFIG_MPC5200)
 #define MPC5XXX_PCI_GSCR	(MPC5XXX_PCI + 0x60)
 #define MPC5XXX_PCI_TBATR0	(MPC5XXX_PCI + 0x64)
 #define MPC5XXX_PCI_TBATR1	(MPC5XXX_PCI + 0x68)
@@ -215,7 +219,6 @@
 #define MPC5XXX_PCI_ISR		(MPC5XXX_PCI + 0x88)
 #define MPC5XXX_PCI_ARB		(MPC5XXX_PCI + 0x8c)
 #define MPC5XXX_PCI_CAR		(MPC5XXX_PCI + 0xf8)
-#endif
 
 /* Interrupt Controller registers */
 #define MPC5XXX_ICTL_PER_MASK	(MPC5XXX_ICTL + 0x0000)
@@ -345,6 +348,24 @@
 #define I2C_IF		0x02
 #define I2C_RXAK	0x01
 
+/* SPI control register 1 bits */
+#define SPI_CR_LSBFE	0x01
+#define SPI_CR_SSOE	0x02
+#define SPI_CR_CPHA	0x04
+#define SPI_CR_CPOL	0x08
+#define SPI_CR_MSTR	0x10
+#define SPI_CR_SWOM	0x20
+#define SPI_CR_SPE	0x40
+#define SPI_CR_SPIE	0x80
+
+/* SPI status register bits */
+#define SPI_SR_MODF	0x10
+#define SPI_SR_WCOL	0x40
+#define SPI_SR_SPIF	0x80
+
+/* SPI port data register bits */
+#define SPI_PDR_SS	0x08
+
 /* Programmable Serial Controller (PSC) status register bits */
 #define PSC_SR_CDE		0x0080
 #define PSC_SR_RXRDY		0x0100
@@ -415,6 +436,77 @@
 							   IORDY protocol */
 
 #ifndef __ASSEMBLY__
+/* Memory map registers */
+struct mpc5xxx_mmap_ctl {
+	volatile u32	mbar;
+	volatile u32	cs0_start;	/* 0x0004 */
+	volatile u32	cs0_stop;
+	volatile u32	cs1_start;	/* 0x000c */
+	volatile u32	cs1_stop;
+	volatile u32	cs2_start;	/* 0x0014 */
+	volatile u32	cs2_stop;
+	volatile u32	cs3_start;	/* 0x001c */
+	volatile u32	cs3_stop;
+	volatile u32	cs4_start;	/* 0x0024 */
+	volatile u32	cs4_stop;
+	volatile u32	cs5_start;	/* 0x002c */
+	volatile u32	cs5_stop;
+	volatile u32	sdram0;		/* 0x0034 */
+	volatile u32	sdram1;		/* 0x0038 */
+	volatile u32	dummy1[4];	/* 0x003c */
+	volatile u32	boot_start;	/* 0x004c */
+	volatile u32	boot_stop;
+	volatile u32	ipbi_ws_ctrl;	/* 0x0054 */
+	volatile u32	cs6_start;	/* 0x0058 */
+	volatile u32	cs6_stop;
+	volatile u32	cs7_start;	/* 0x0060 */
+	volatile u32	cs7_stop;
+};
+
+/* Clock distribution module */
+struct mpc5xxx_cdm {
+	volatile u32	jtagid;		/* 0x0000 */
+	volatile u32	porcfg;
+	volatile u32	brdcrmb;	/* 0x0008 */
+	volatile u32	cfg;
+	volatile u32	fourtyeight_fdc;/* 0x0010 */
+	volatile u32	clock_enable;
+	volatile u32	system_osc;	/* 0x0018 */
+	volatile u32	ccscr;
+	volatile u32	sreset;		/* 0x0020 */
+	volatile u32	pll_status;
+	volatile u32	psc1_mccr;	/* 0x0028 */
+	volatile u32	psc2_mccr;
+	volatile u32	psc3_mccr;	/* 0x0030 */
+	volatile u32	psc6_mccr;
+};
+
+/* SDRAM controller */
+struct mpc5xxx_sdram {
+	volatile u32	mode;
+	volatile u32	ctrl;
+	volatile u32	config1;
+	volatile u32	config2;
+	volatile u32	dummy[32];
+	volatile u32	sdelay;
+};
+
+struct mpc5xxx_lpb {
+	volatile u32	cs0_cfg;
+	volatile u32	cs1_cfg;
+	volatile u32	cs2_cfg;
+	volatile u32	cs3_cfg;
+	volatile u32	cs4_cfg;
+	volatile u32	cs5_cfg;
+	volatile u32	cs_ctrl;
+	volatile u32	cs_status;
+	volatile u32	cs6_cfg;
+	volatile u32	cs7_cfg;
+	volatile u32	cs_burst;
+	volatile u32	cs_deadcycle;
+};
+
+
 struct mpc5xxx_psc {
 	volatile u8	mode;		/* PSC + 0x00 */
 	volatile u8	reserved0[3];
@@ -555,6 +647,29 @@ struct mpc5xxx_gpio {
 	volatile u8 sint_ival;		/* GPIO + 0x3d */
 	volatile u8 bus_errs;		/* GPIO + 0x3e */
 	volatile u8 reserved10;		/* GPIO + 0x3f */
+};
+
+struct mpc5xxx_wu_gpio {
+	volatile u8 enable;		/* WU_GPIO + 0x00 */
+	volatile u8 reserved1[3];	/* WU_GPIO + 0x01 */
+	volatile u8 ode;		/* WU_GPIO + 0x04 */
+	volatile u8 reserved2[3];	/* WU_GPIO + 0x05 */
+	volatile u8 ddr;		/* WU_GPIO + 0x08 */
+	volatile u8 reserved3[3];	/* WU_GPIO + 0x09 */
+	volatile u8 dvo;		/* WU_GPIO + 0x0c */
+	volatile u8 reserved4[3];	/* WU_GPIO + 0x0d */
+	volatile u8 inten;		/* WU_GPIO + 0x10 */
+	volatile u8 reserved5[3];	/* WU_GPIO + 0x11 */
+	volatile u8 iinten;		/* WU_GPIO + 0x14 */
+	volatile u8 reserved6[3];	/* WU_GPIO + 0x15 */
+	volatile u16 itype;		/* WU_GPIO + 0x18 */
+	volatile u8 reserved7[2];	/* WU_GPIO + 0x1a */
+	volatile u8 master_enable;	/* WU_GPIO + 0x1c */
+	volatile u8 reserved8[3];	/* WU_GPIO + 0x1d */
+	volatile u8 ival;		/* WU_GPIO + 0x20 */
+	volatile u8 reserved9[3];	/* WU_GPIO + 0x21 */
+	volatile u8 status;		/* WU_GPIO + 0x24 */
+	volatile u8 reserved10[3];	/* WU_GPIO + 0x25 */
 };
 
 struct mpc5xxx_sdma {
@@ -765,6 +880,23 @@ struct mpc5xxx_mscan {
 	struct mscan_buffer canrxfg;    /* MSCAN + 0x40 */    /* Foreground receive buffer */
 	struct mscan_buffer cantxfg;    /* MSCAN + 0x60 */    /* Foreground transmit buffer */
 	};
+
+struct mpc5xxx_xlb {
+	volatile u8 reserved[0x40];	/* XLB + 0x00 */
+	volatile u32 config;		/* XLB + 0x40 */
+	volatile u32 version;		/* XLB + 0x44 */
+	volatile u32 status;		/* XLB + 0x48 */
+	volatile u32 int_enable;	/* XLB + 0x4c */
+	volatile u32 addr_capture;	/* XLB + 0x50 */
+	volatile u32 bus_sig_capture;	/* XLB + 0x54 */
+	volatile u32 addr_timeout;	/* XLB + 0x58 */
+	volatile u32 data_timeout;	/* XLB + 0x5c */
+	volatile u32 bus_act_timeout;	/* XLB + 0x60 */
+	volatile u32 master_pri_enable; /* XLB + 0x64 */
+	volatile u32 master_priority;	/* XLB + 0x68 */
+	volatile u32 base_address;	/* XLB + 0x6c */
+	volatile u32 snoop_window;	/* XLB + 0x70 */
+};
 
 /* function prototypes */
 void loadtask(int basetask, int tasks);

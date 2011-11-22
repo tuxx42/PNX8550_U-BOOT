@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2002
- * St‰ubli Faverges - <www.staubli.com>
+ * St√§ubli Faverges - <www.staubli.com>
  * Pierre AUBERT  p.aubert@staubli.com
  *
  * See file CREDITS for list of people who contributed to this
@@ -34,7 +34,7 @@
 
 #define DEFAULT_VIDEO_MEMORY_SIZE  0x140000     /* Video Memory Size */
 
-#define HWCURSORSIZE 		   1024     /* Size of memory reserved
+#define HWCURSORSIZE		   1024     /* Size of memory reserved
 						   for HW cursor*/
 
 /* Offset of chipset registers                                               */

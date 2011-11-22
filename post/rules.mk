@@ -23,7 +23,9 @@
 
 include $(TOPDIR)/config.mk
 
-SRCS 	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
+COBJS	:= $(COBJS-y)
+AOBJS	:= $(AOBJS-y)
+SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS))
 LIB	:= $(obj)$(LIB)
 
@@ -32,7 +34,7 @@ CPPFLAGS += -I$(TOPDIR)
 all:	$(LIB)
 
 $(LIB):	$(obj).depend $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
 
 #########################################################################
 

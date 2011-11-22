@@ -25,13 +25,8 @@
 # PCS440EP board
 #
 
-#TEXT_BASE = 0x00001000
-
-ifeq ($(ramsym),1)
-TEXT_BASE = 0xFBD00000
-else
-TEXT_BASE = 0xFFFA0000
-endif
+# Check the U-Boot Image with a SHA1 checksum
+ALL-y += $(obj)u-boot.sha1
 
 PLATFORM_CPPFLAGS += -DCONFIG_440=1
 
@@ -40,5 +35,5 @@ PLATFORM_CPPFLAGS += -DDEBUG
 endif
 
 ifeq ($(dbcr),1)
-PLATFORM_CPPFLAGS += -DCFG_INIT_DBCR=0x8cff0000
+PLATFORM_CPPFLAGS += -DCONFIG_SYS_INIT_DBCR=0x8cff0000
 endif

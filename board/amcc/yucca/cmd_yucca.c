@@ -31,12 +31,10 @@
 
 extern void print_evb440spe_info(void);
 static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag,
-		int flag, int argc, char *argv[]);
-
-extern int cmd_get_data_size(char* arg, int default_size);
+		int flag, int argc, char * const argv[]);
 
 /* ------------------------------------------------------------------------- */
-int do_evb440spe(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_evb440spe(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return setBootStrapClock (cmdtp, 1, flag, argc, argv);
 }
@@ -48,7 +46,7 @@ int do_evb440spe(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
  *	evb440spe wrclk prom0,prom1
  */
 static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
-		int argc, char *argv[])
+		int argc, char * const argv[])
 {
 	uchar	chip;
 	ulong	data;
@@ -60,10 +58,8 @@ static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
 	char plbClock[4];
 	char pcixClock[4];
 
-	if (argc < 3) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 3)
+		return cmd_usage(cmdtp);
 
 	if (strcmp(argv[2], "prom0") == 0)
 		chip = IIC0_BOOTPROM_ADDR;
@@ -71,7 +67,7 @@ static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
 		chip = IIC0_ALT_BOOTPROM_ADDR;
 
 	do {
-		printf("enter sys clock frequency 33 or 66 Mhz or quit to abort\n");
+		printf("enter sys clock frequency 33 or 66 MHz or quit to abort\n");
 		nbytes = readline (" ? ");
 
 		if (strcmp(console_buffer, "quit") == 0)
@@ -87,12 +83,12 @@ static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
 
 	do {
 		if (strcmp(sysClock, "66") == 0) {
-			printf("enter cpu clock frequency 400, 533 Mhz or quit to abort\n");
+			printf("enter cpu clock frequency 400, 533 MHz or quit to abort\n");
 		} else {
 #ifdef	CONFIG_STRESS
-			printf("enter cpu clock frequency 400, 500, 533, 667 Mhz or quit to abort\n");
+			printf("enter cpu clock frequency 400, 500, 533, 667 MHz or quit to abort\n");
 #else
-			printf("enter cpu clock frequency 400, 500, 533 Mhz or quit to abort\n");
+			printf("enter cpu clock frequency 400, 500, 533 MHz or quit to abort\n");
 #endif
 		}
 		nbytes = readline (" ? ");
@@ -132,11 +128,11 @@ static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
 	} else {
 		do {
 			if (strcmp(cpuClock, "400") == 0)
-				printf("enter plb clock frequency 100, 133 Mhz or quit to abort\n");
+				printf("enter plb clock frequency 100, 133 MHz or quit to abort\n");
 
 #ifdef	CONFIG_STRESS
 			if (strcmp(cpuClock, "667") == 0)
-				printf("enter plb clock frequency 133, 166 Mhz or quit to abort\n");
+				printf("enter plb clock frequency 133, 166 MHz or quit to abort\n");
 
 #endif
 			nbytes = readline (" ? ");
@@ -162,7 +158,7 @@ static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
 	}
 
 	do {
-		printf("enter Pci-X clock frequency 33, 66, 100 or 133 Mhz or quit to abort\n");
+		printf("enter Pci-X clock frequency 33, 66, 100 or 133 MHz or quit to abort\n");
 		nbytes = readline (" ? ");
 
 		if (strcmp(console_buffer, "quit") == 0)
@@ -178,10 +174,10 @@ static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
 
 	} while (nbytes == 0);
 
-	printf("\nsys clk   = %sMhz\n", sysClock);
-	printf("cpu clk   = %sMhz\n", cpuClock);
-	printf("plb clk   = %sMhz\n", plbClock);
-	printf("Pci-X clk = %sMhz\n", pcixClock);
+	printf("\nsys clk   = %s MHz\n", sysClock);
+	printf("cpu clk   = %s MHz\n", cpuClock);
+	printf("plb clk   = %s MHz\n", plbClock);
+	printf("Pci-X clk = %s MHz\n", pcixClock);
 
 	do {
 		printf("\npress [y] to write I2C bootstrap \n");
@@ -283,6 +279,6 @@ static int setBootStrapClock(cmd_tbl_t *cmdtp, int incrflag, int flag,
 
 U_BOOT_CMD(
 	evb440spe,	3,	1,	do_evb440spe,
-	"evb440spe - program the serial device strap\n",
-	"wrclk [prom0|prom1] - program the serial device strap\n"
+	"program the serial device strap",
+	"wrclk [prom0|prom1] - program the serial device strap"
 );

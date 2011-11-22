@@ -27,11 +27,12 @@ Skeleton NIC driver for Etherboot
 #include <asm/cache.h>
 #include <miiphy.h>
 #include <net.h>
+#include <netdev.h>
 
 #include "eth.h"
 #include "eth_addrtbl.h"
 
-#if (CONFIG_COMMANDS & CFG_CMD_NET) && defined(CONFIG_NET_MULTI)
+#if defined(CONFIG_CMD_NET) && defined(CONFIG_NET_MULTI)
 
 #define GT6426x_ETH_BUF_SIZE	1536
 
@@ -88,7 +89,7 @@ static const char ether_port_phy_addr[3]={4,5,6};
 /* MII PHY access routines are common for all i/f, use gal_ent0 */
 #define GT6426x_MII_DEVNAME	"gal_enet0"
 
-int gt6426x_miiphy_read(char *devname, unsigned char phy,
+int gt6426x_miiphy_read(const char *devname, unsigned char phy,
 		unsigned char reg, unsigned short *val);
 
 static inline unsigned short
@@ -163,7 +164,7 @@ gt6426x_eth_receive(struct eth_dev_s *p,unsigned int icr)
 	int eth_len=0;
 	char *eth_data;
 
-	eth0_rx_desc_single *rx=&p->eth_rx_desc[(p->rdn)];
+	eth0_rx_desc_single *rx = &p->eth_rx_desc[(p->rdn)];
 
 	INVALIDATE_DCACHE((unsigned int)rx,(unsigned int)(rx+1));
 
@@ -252,7 +253,7 @@ gt6426x_eth_transmit(void *v, volatile char *p, unsigned int s)
 #ifdef DEBUG
 	unsigned int old_command_stat,old_psr;
 #endif
-	eth0_tx_desc_single *tx=&dev->eth_tx_desc[dev->tdn];
+	eth0_tx_desc_single *tx = &dev->eth_tx_desc[dev->tdn];
 
 	/* wait for tx to be ready */
 	INVALIDATE_DCACHE((unsigned int)tx,(unsigned int)(tx+1));
@@ -344,7 +345,7 @@ gt6426x_eth_disable(void *v)
 MII utilities - write: write to an MII register via SMI
 ***************************************************************************/
 int
-gt6426x_miiphy_write(char *devname, unsigned char phy,
+gt6426x_miiphy_write(const char *devname, unsigned char phy,
 		unsigned char reg, unsigned short data)
 {
     unsigned int temp= (reg<<21) | (phy<<16) | data;
@@ -359,7 +360,7 @@ gt6426x_miiphy_write(char *devname, unsigned char phy,
 MII utilities - read: read from an MII register via SMI
 ***************************************************************************/
 int
-gt6426x_miiphy_read(char *devname, unsigned char phy,
+gt6426x_miiphy_read(const char *devname, unsigned char phy,
 		unsigned char reg, unsigned short *val)
 {
     unsigned int temp= (reg<<21) | (phy<<16) | 1<<26;
@@ -421,24 +422,24 @@ gt6426x_dump_mii(bd_t *bis, unsigned short phy)
 static void
 check_phy_state(struct eth_dev_s *p)
 {
-	int bmsr = miiphy_read_ret(ether_port_phy_addr[p->dev], PHY_BMSR);
+	int bmsr = miiphy_read_ret(ether_port_phy_addr[p->dev], MII_BMSR);
 	int psr = GTREGREAD(ETHERNET0_PORT_STATUS_REGISTER + p->reg_base);
 
-	if ((psr & 1<<3) && (bmsr & PHY_BMSR_LS)) {
-		int nego = miiphy_read_ret(ether_port_phy_addr[p->dev], PHY_ANAR) &
-				miiphy_read_ret(ether_port_phy_addr[p->dev], PHY_ANLPAR);
+	if ((psr & 1<<3) && (bmsr & BMSR_LSTATUS)) {
+		int nego = miiphy_read_ret(ether_port_phy_addr[p->dev], MII_ADVERTISE) &
+				miiphy_read_ret(ether_port_phy_addr[p->dev], MII_LPA);
 		int want;
 
-		if (nego & PHY_ANLPAR_TXFD) {
+		if (nego & LPA_100FULL) {
 			want = 0x3;
 			printf("MII: 100Base-TX, Full Duplex\n");
-		} else if (nego & PHY_ANLPAR_TX) {
+		} else if (nego & LPA_100HALF) {
 			want = 0x1;
 			printf("MII: 100Base-TX, Half Duplex\n");
-		} else if (nego & PHY_ANLPAR_10FD) {
+		} else if (nego & LPA_10FULL) {
 			want = 0x2;
 			printf("MII: 10Base-T, Full Duplex\n");
-		} else if (nego & PHY_ANLPAR_10) {
+		} else if (nego & LPA_10HALF) {
 			want = 0x0;
 			printf("MII: 10Base-T, Half Duplex\n");
 		} else {
@@ -529,7 +530,7 @@ gt6426x_eth_probe(void *v, bd_t *bis)
 #endif
 
 	/* 31  28 27  24 23  20 19  16
-	 *  0000   0000   0000   0000 	[0004]
+	 *  0000   0000   0000   0000	[0004]
 	 * 15  12 11  8   7  4   3  0
 	 *  1000   1101   0000   0000	[4d00]
 	 *    20 - 0=MII 1=RMII
@@ -707,7 +708,7 @@ gt6426x_eth_initialize(bd_t *bis)
 				return;
 		}
 
-		temp = getenv_r (s, buf, sizeof(buf));
+		temp = getenv_f(s, buf, sizeof(buf));
 		s = (temp > 0) ? buf : NULL;
 
 #ifdef DEBUG
@@ -797,11 +798,11 @@ gt6426x_eth_initialize(bd_t *bis)
 
 
 		eth_register(dev);
-#if defined(CONFIG_MII) || (CONFIG_COMMANDS & CFG_CMD_MII)
+#if defined(CONFIG_MII) || defined(CONFIG_CMD_MII)
 		miiphy_register(dev->name,
 				gt6426x_miiphy_read, gt6426x_miiphy_write);
 #endif
 	}
 
 }
-#endif /* CFG_CMD_NET && CONFIG_NET_MULTI */
+#endif

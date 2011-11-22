@@ -544,7 +544,7 @@ xyzModem_stream_open (connection_info_t * info, int *err)
 			  xyzModem_CHAR_TIMEOUT);
 #else
 /* TODO: CHECK ! */
-  int dummy;
+  int dummy = 0;
   xyz.__chan = &dummy;
 #endif
   xyz.len = 0;
@@ -786,7 +786,7 @@ xyzModem_stream_terminate (bool abort, int (*getc) (void))
       ZM_DEBUG (zm_dprintf ("Engaging cleanup mode...\n"));
       /*
        * Consume any trailing crap left in the inbuffer from
-       * previous recieved blocks. Since very few files are an exact multiple
+       * previous received blocks. Since very few files are an exact multiple
        * of the transfer block size, there will almost always be some gunk here.
        * If we don't eat it now, RedBoot will think the user typed it.
        */

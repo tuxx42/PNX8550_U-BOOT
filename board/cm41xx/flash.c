@@ -31,7 +31,7 @@
 #include <linux/byteorder/swab.h>
 
 
-flash_info_t flash_info[CFG_MAX_FLASH_BANKS];	/* info for FLASH chips */
+flash_info_t flash_info[CONFIG_SYS_MAX_FLASH_BANKS];	/* info for FLASH chips */
 
 #define mb() __asm__ __volatile__ ("" : : : "memory")
 
@@ -51,7 +51,7 @@ unsigned long flash_init (void)
 	int i;
 	ulong size = 0;
 
-	for (i = 0; i < CFG_MAX_FLASH_BANKS; i++) {
+	for (i = 0; i < CONFIG_SYS_MAX_FLASH_BANKS; i++) {
 		switch (i) {
 		case 0:
 			flash_get_size ((unsigned char *) PHYS_FLASH_1, &flash_info[i]);
@@ -71,8 +71,8 @@ unsigned long flash_init (void)
 	/* Protect monitor and environment sectors
 	 */
 	flash_protect (FLAG_PROTECT_SET,
-		       CFG_FLASH_BASE,
-		       CFG_FLASH_BASE + _bss_start - _armboot_start,
+		       CONFIG_SYS_FLASH_BASE,
+		       CONFIG_SYS_FLASH_BASE + _bss_start_ofs,
 		       &flash_info[0]);
 
 	return size;
@@ -189,10 +189,10 @@ static ulong flash_get_size (unsigned char * addr, flash_info_t * info)
 		break;
 	}
 
-	if (info->sector_count > CFG_MAX_FLASH_SECT) {
+	if (info->sector_count > CONFIG_SYS_MAX_FLASH_SECT) {
 		printf ("** ERROR: sector count %d > max (%d) **\n",
-			info->sector_count, CFG_MAX_FLASH_SECT);
-		info->sector_count = CFG_MAX_FLASH_SECT;
+			info->sector_count, CONFIG_SYS_MAX_FLASH_SECT);
+		info->sector_count = CONFIG_SYS_MAX_FLASH_SECT;
 	}
 
 	addr[0] = 0xFF;	/* restore read mode */
@@ -209,6 +209,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 	int flag, prot, sect;
 	ulong type;
 	int rcode = 0;
+	ulong start;
 
 	if ((s_first < 0) || (s_first > s_last)) {
 		if (info->flash_id == FLASH_UNKNOWN) {
@@ -250,7 +251,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 			printf ("Erasing sector %2d ... ", sect);
 
 			/* arm simple, non interrupt dependent timer */
-			reset_timer_masked ();
+			start = get_timer(0);
 
 			addr = (volatile unsigned char *) (info->start[sect]);
 			*addr = 0x50;	/* clear status register */
@@ -258,8 +259,8 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 			*addr = 0xD0;	/* erase confirm */
 
 			while (((status = *addr) & 0x80) != 0x80) {
-				if (get_timer_masked () >
-				    CFG_FLASH_ERASE_TOUT) {
+				if (get_timer(start) >
+				    CONFIG_SYS_FLASH_ERASE_TOUT) {
 					printf ("Timeout\n");
 					*addr = 0xB0;	/* suspend erase */
 					*addr = 0xFF;	/* reset to read mode */
@@ -370,6 +371,7 @@ static int write_data (flash_info_t * info, ulong dest, unsigned char data)
 	volatile unsigned char *addr = (volatile unsigned char *) dest;
 	ulong status;
 	int flag;
+	ulong start;
 
 	/* Check if Flash is (sufficiently) erased */
 	if ((*addr & data) != data) {
@@ -384,11 +386,11 @@ static int write_data (flash_info_t * info, ulong dest, unsigned char data)
 	*addr = data;
 
 	/* arm simple, non interrupt dependent timer */
-	reset_timer_masked ();
+	start = get_timer(0);
 
 	/* wait while polling the status register */
 	while (((status = *addr) & 0x80) != 0x80) {
-		if (get_timer_masked () > CFG_FLASH_WRITE_TOUT) {
+		if (get_timer(start) > CONFIG_SYS_FLASH_WRITE_TOUT) {
 			*addr = 0xFF;	/* restore read mode */
 			return (1);
 		}

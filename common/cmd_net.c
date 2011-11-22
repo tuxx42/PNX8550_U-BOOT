@@ -28,71 +28,85 @@
 #include <command.h>
 #include <net.h>
 
-#if (CONFIG_COMMANDS & CFG_CMD_NET)
+static int netboot_common (proto_t, cmd_tbl_t *, int , char * const []);
 
-
-extern int do_bootm (cmd_tbl_t *, int, int, char *[]);
-
-static int netboot_common (proto_t, cmd_tbl_t *, int , char *[]);
-
-int do_bootp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_bootp (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return netboot_common (BOOTP, cmdtp, argc, argv);
 }
 
 U_BOOT_CMD(
 	bootp,	3,	1,	do_bootp,
-	"bootp\t- boot image via network using BootP/TFTP protocol\n",
-	"[loadAddress] [bootfilename]\n"
+	"boot image via network using BOOTP/TFTP protocol",
+	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
 
-int do_tftpb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_tftpb (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return netboot_common (TFTP, cmdtp, argc, argv);
 }
 
 U_BOOT_CMD(
 	tftpboot,	3,	1,	do_tftpb,
-	"tftpboot- boot image via network using TFTP protocol\n",
-	"[loadAddress] [bootfilename]\n"
+	"boot image via network using TFTP protocol",
+	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
 
-int do_rarpb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+#ifdef CONFIG_CMD_TFTPSRV
+static int do_tftpsrv(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	return netboot_common(TFTPSRV, cmdtp, argc, argv);
+}
+
+U_BOOT_CMD(
+	tftpsrv,	2,	1,	do_tftpsrv,
+	"act as a TFTP server and boot the first received file",
+	"[loadAddress]\n"
+	"Listen for an incoming TFTP transfer, receive a file and boot it.\n"
+	"The transfer is aborted if a transfer has not been started after\n"
+	"about 50 seconds or if Ctrl-C is pressed."
+);
+#endif
+
+
+#ifdef CONFIG_CMD_RARP
+int do_rarpb (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return netboot_common (RARP, cmdtp, argc, argv);
 }
 
 U_BOOT_CMD(
 	rarpboot,	3,	1,	do_rarpb,
-	"rarpboot- boot image via network using RARP/TFTP protocol\n",
-	"[loadAddress] [bootfilename]\n"
+	"boot image via network using RARP/TFTP protocol",
+	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
+#endif
 
-#if (CONFIG_COMMANDS & CFG_CMD_DHCP)
-int do_dhcp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+#if defined(CONFIG_CMD_DHCP)
+int do_dhcp (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return netboot_common(DHCP, cmdtp, argc, argv);
 }
 
 U_BOOT_CMD(
 	dhcp,	3,	1,	do_dhcp,
-	"dhcp\t- invoke DHCP client to obtain IP/boot params\n",
-	"\n"
+	"boot image via network using DHCP/TFTP protocol",
+	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
-#endif	/* CFG_CMD_DHCP */
+#endif
 
-#if (CONFIG_COMMANDS & CFG_CMD_NFS)
-int do_nfs (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+#if defined(CONFIG_CMD_NFS)
+int do_nfs (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return netboot_common(NFS, cmdtp, argc, argv);
 }
 
 U_BOOT_CMD(
 	nfs,	3,	1,	do_nfs,
-	"nfs\t- boot image via network using NFS protocol\n",
-	"[loadAddress] [host ip addr:bootfilename]\n"
+	"boot image via network using NFS protocol",
+	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
-#endif	/* CFG_CMD_NFS */
+#endif
 
 static void netboot_update_env (void)
 {
@@ -128,7 +142,7 @@ static void netboot_update_env (void)
 		ip_to_string (NetOurDNSIP, tmp);
 		setenv ("dnsip", tmp);
 	}
-#if (CONFIG_BOOTP_MASK & CONFIG_BOOTP_DNS2)
+#if defined(CONFIG_BOOTP_DNS2)
 	if (NetOurDNS2IP) {
 		ip_to_string (NetOurDNS2IP, tmp);
 		setenv ("dnsip2", tmp);
@@ -137,13 +151,15 @@ static void netboot_update_env (void)
 	if (NetOurNISDomain[0])
 		setenv ("domain", NetOurNISDomain);
 
-#if (CONFIG_COMMANDS & CFG_CMD_SNTP) && (CONFIG_BOOTP_MASK & CONFIG_BOOTP_TIMEOFFSET)
+#if defined(CONFIG_CMD_SNTP) \
+    && defined(CONFIG_BOOTP_TIMEOFFSET)
 	if (NetTimeOffset) {
 		sprintf (tmp, "%d", NetTimeOffset);
 		setenv ("timeoffset", tmp);
 	}
 #endif
-#if (CONFIG_COMMANDS & CFG_CMD_SNTP) && (CONFIG_BOOTP_MASK & CONFIG_BOOTP_NTPSERVER)
+#if defined(CONFIG_CMD_SNTP) \
+    && defined(CONFIG_BOOTP_NTPSERVER)
 	if (NetNtpServerIP) {
 		ip_to_string (NetNtpServerIP, tmp);
 		setenv ("ntpserverip", tmp);
@@ -152,11 +168,13 @@ static void netboot_update_env (void)
 }
 
 static int
-netboot_common (proto_t proto, cmd_tbl_t *cmdtp, int argc, char *argv[])
+netboot_common (proto_t proto, cmd_tbl_t *cmdtp, int argc, char * const argv[])
 {
 	char *s;
+	char *end;
 	int   rcode = 0;
 	int   size;
+	ulong addr;
 
 	/* pre-set load_addr */
 	if ((s = getenv("loadaddr")) != NULL) {
@@ -167,15 +185,17 @@ netboot_common (proto_t proto, cmd_tbl_t *cmdtp, int argc, char *argv[])
 	case 1:
 		break;
 
-	case 2:	/* only one arg - accept two forms:
-		 * just load address, or just boot file name.
-		 * The latter form must be written "filename" here.
+	case 2:	/*
+		 * Only one arg - accept two forms:
+		 * Just load address, or just boot file name. The latter
+		 * form must be written in a format which can not be
+		 * mis-interpreted as a valid number.
 		 */
-		if (argv[1][0] == '"') {	/* just boot filename */
-			copy_filename (BootFile, argv[1], sizeof(BootFile));
-		} else {			/* load address	*/
-			load_addr = simple_strtoul(argv[1], NULL, 16);
-		}
+		addr = simple_strtoul(argv[1], &end, 16);
+		if (end == (argv[1] + strlen(argv[1])))
+			load_addr = addr;
+		else
+			copy_filename(BootFile, argv[1], sizeof(BootFile));
 		break;
 
 	case 3:	load_addr = simple_strtoul(argv[1], NULL, 16);
@@ -183,54 +203,49 @@ netboot_common (proto_t proto, cmd_tbl_t *cmdtp, int argc, char *argv[])
 
 		break;
 
-	default: printf ("Usage:\n%s\n", cmdtp->usage);
+	default:
+		show_boot_progress (-80);
+		return cmd_usage(cmdtp);
+	}
+
+	show_boot_progress (80);
+	if ((size = NetLoop(proto)) < 0) {
+		show_boot_progress (-81);
 		return 1;
 	}
 
-	if ((size = NetLoop(proto)) < 0)
-		return 1;
-
+	show_boot_progress (81);
 	/* NetLoop ok, update environment */
 	netboot_update_env();
 
 	/* done if no file was loaded (no errors though) */
-	if (size == 0)
+	if (size == 0) {
+		show_boot_progress (-82);
 		return 0;
+	}
 
 	/* flush cache */
 	flush_cache(load_addr, size);
 
-	/* Loading ok, check if we should attempt an auto-start */
-	if (((s = getenv("autostart")) != NULL) && (strcmp(s,"yes") == 0)) {
-		char *local_args[2];
-		local_args[0] = argv[0];
-		local_args[1] = NULL;
+	show_boot_progress(82);
+	rcode = bootm_maybe_autostart(cmdtp, argv[0]);
 
-		printf ("Automatic boot of image at addr 0x%08lX ...\n",
-			load_addr);
-		rcode = do_bootm (cmdtp, 0, 1, local_args);
-	}
-
-#ifdef CONFIG_AUTOSCRIPT
-	if (((s = getenv("autoscript")) != NULL) && (strcmp(s,"yes") == 0)) {
-		printf("Running autoscript at addr 0x%08lX ...\n", load_addr);
-		rcode = autoscript (load_addr);
-	}
-#endif
+	if (rcode < 0)
+		show_boot_progress (-83);
+	else
+		show_boot_progress (84);
 	return rcode;
 }
 
-#if (CONFIG_COMMANDS & CFG_CMD_PING)
-int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+#if defined(CONFIG_CMD_PING)
+int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	if (argc < 2)
 		return -1;
 
 	NetPingIP = string_to_ip(argv[1]);
-	if (NetPingIP == 0) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return -1;
-	}
+	if (NetPingIP == 0)
+		return cmd_usage(cmdtp);
 
 	if (NetLoop(PING) < 0) {
 		printf("ping failed; host %s is not alive\n", argv[1]);
@@ -244,12 +259,12 @@ int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(
 	ping,	2,	1,	do_ping,
-	"ping\t- send ICMP ECHO_REQUEST to network host\n",
-	"pingAddress\n"
+	"send ICMP ECHO_REQUEST to network host",
+	"pingAddress"
 );
-#endif	/* CFG_CMD_PING */
+#endif
 
-#if (CONFIG_COMMANDS & CFG_CMD_CDP)
+#if defined(CONFIG_CMD_CDP)
 
 static void cdp_update_env(void)
 {
@@ -271,7 +286,7 @@ static void cdp_update_env(void)
 
 }
 
-int do_cdp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_cdp (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int r;
 
@@ -288,12 +303,13 @@ int do_cdp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(
 	cdp,	1,	1,	do_cdp,
-	"cdp\t- Perform CDP network configuration\n",
+	"Perform CDP network configuration",
+	"\n"
 );
-#endif	/* CFG_CMD_CDP */
+#endif
 
-#if (CONFIG_COMMANDS & CFG_CMD_SNTP)
-int do_sntp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+#if defined(CONFIG_CMD_SNTP)
+int do_sntp (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char *toff;
 
@@ -316,7 +332,8 @@ int do_sntp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	else NetTimeOffset = simple_strtol (toff, NULL, 10);
 
 	if (NetLoop(SNTP) < 0) {
-		printf("SNTP failed: host %s not responding\n", argv[1]);
+		printf("SNTP failed: host %pI4 not responding\n",
+			&NetNtpServerIP);
 		return 1;
 	}
 
@@ -325,9 +342,53 @@ int do_sntp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(
 	sntp,	2,	1,	do_sntp,
-	"sntp\t- synchronize RTC via network\n",
+	"synchronize RTC via network",
 	"[NTP server IP]\n"
 );
-#endif	/* CFG_CMD_SNTP */
+#endif
 
-#endif	/* CFG_CMD_NET */
+#if defined(CONFIG_CMD_DNS)
+int do_dns(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if (argc == 1)
+		return cmd_usage(cmdtp);
+
+	/*
+	 * We should check for a valid hostname:
+	 * - Each label must be between 1 and 63 characters long
+	 * - the entire hostname has a maximum of 255 characters
+	 * - only the ASCII letters 'a' through 'z' (case-insensitive),
+	 *   the digits '0' through '9', and the hyphen
+	 * - cannot begin or end with a hyphen
+	 * - no other symbols, punctuation characters, or blank spaces are
+	 *   permitted
+	 * but hey - this is a minimalist implmentation, so only check length
+	 * and let the name server deal with things.
+	 */
+	if (strlen(argv[1]) >= 255) {
+		printf("dns error: hostname too long\n");
+		return 1;
+	}
+
+	NetDNSResolve = argv[1];
+
+	if (argc == 3)
+		NetDNSenvvar = argv[2];
+	else
+		NetDNSenvvar = NULL;
+
+	if (NetLoop(DNS) < 0) {
+		printf("dns lookup of %s failed, check setup\n", argv[1]);
+		return 1;
+	}
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	dns,	3,	1,	do_dns,
+	"lookup the IP of a hostname",
+	"hostname [envvar]"
+);
+
+#endif	/* CONFIG_CMD_DNS */

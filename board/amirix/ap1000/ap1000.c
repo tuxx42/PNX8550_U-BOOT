@@ -23,6 +23,7 @@
 
 #include <common.h>
 #include <command.h>
+#include <netdev.h>
 #include <asm/processor.h>
 
 #include "powerspan.h"
@@ -36,8 +37,8 @@ int board_pre_init (void)
 /** serial number and platform display at startup */
 int checkboard (void)
 {
-	char *s = getenv ("serial#");
-	char *e;
+	char buf[64];
+	int l = getenv_f("serial#", buf, sizeof(buf));
 
 	/* After a loadace command, the SystemAce control register is left in a wonky state. */
 	/* this code did not work in board_pre_init */
@@ -114,17 +115,19 @@ int checkboard (void)
 
 	puts ("Serial#: ");
 
-	if (!s) {
+	if (l < 0) {
 		printf ("### No HW ID - assuming AMIRIX");
 	} else {
-		for (e = s; *e; ++e) {
-			if (*e == ' ')
+		int i;
+
+		for (i = 0; i < l; ++i) {
+			if (buf[i] == ' ') {
+				buf[i] = '\0';
 				break;
+			}
 		}
 
-		for (; s < e; ++s) {
-			putc (*s);
-		}
+		puts(buf);
 	}
 
 	putc ('\n');
@@ -133,11 +136,13 @@ int checkboard (void)
 }
 
 
-long int initdram (int board_type)
+phys_size_t initdram (int board_type)
 {
-	char *s = getenv ("dramsize");
+	char buf[64];
+	int i = getenv_f("dramsize", buf, sizeof(buf));
 
-	if (s != NULL) {
+	if (i > 0) {
+		char *s = buf;
 		if ((s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X'))) {
 			s += 2;
 		}
@@ -166,7 +171,7 @@ unsigned int get_device (void)
 /*
    This function loads FPGA configurations from the SystemACE CompactFlash
 */
-int do_loadace (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_loadace (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	unsigned char *p = (unsigned char *) AP1000_SYSACE_REGBASE;
 	int cfg;
@@ -246,7 +251,7 @@ int do_loadace (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
   *     -1 if failed
   * </pre>
   */
-int do_swconfigbyte (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_swconfigbyte (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	unsigned char *sector_buffer = NULL;
 	unsigned char input_char;
@@ -310,7 +315,7 @@ int do_swconfigbyte (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 #define ONE_SECOND 1000000
 
-int do_pause (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_pause (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	int pause_time;
 	unsigned int delay_time;
@@ -344,7 +349,7 @@ int do_pause (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	return 0;
 }
 
-int do_swreconfig (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_swreconfig (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	printf ("Triggering software reconfigure (software config byte is 0x%02x)...\n",
 		*((unsigned char *) (SW_BYTE_SECTOR_ADDR + SW_BYTE_SECTOR_OFFSET)));
@@ -364,7 +369,7 @@ int do_swreconfig (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 #define TEMP_ETHERM_BIT 0x02
 #define TEMP_LTHERM_BIT 0x01
 
-int do_temp_sensor (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_temp_sensor (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	char cmd;
 	int ret_val = 0;
@@ -658,7 +663,7 @@ done:
 }
 
 U_BOOT_CMD (temp, 6, 0, do_temp_sensor,
-	    "temp    - interact with the temperature sensor\n",
+	    "interact with the temperature sensor",
 	    "temp [s]\n"
 	    "        - Show status.\n"
 	    "temp l LOW [HIGH] [THERM]\n"
@@ -669,31 +674,36 @@ U_BOOT_CMD (temp, 6, 0, do_temp_sensor,
 	    "        - Set config options.\n"
 	    "\n"
 	    "All values can be decimal or hex (hex preceded with 0x).\n"
-	    "Only whole numbers are supported for external limits.\n");
+	    "Only whole numbers are supported for external limits.");
 
 #if 0
 U_BOOT_CMD (loadace, 2, 0, do_loadace,
-	    "loadace - load fpga configuration from System ACE compact flash\n",
+	    "load fpga configuration from System ACE compact flash",
 	    "N\n"
 	    "    - Load configuration N (0-7) from System ACE compact flash\n"
-	    "loadace\n" "    - loads default configuration\n");
+	    "loadace\n" "    - loads default configuration");
 #endif
 
 U_BOOT_CMD (swconfig, 2, 0, do_swconfigbyte,
-	    "swconfig- display or modify the software configuration byte\n",
+	    "display or modify the software configuration byte",
 	    "N [ADDRESS]\n"
 	    "    - set software configuration byte to N, optionally use ADDRESS as\n"
 	    "      location of buffer for flash copy\n"
-	    "swconfig\n" "    - display software configuration byte\n");
+	    "swconfig\n" "    - display software configuration byte");
 
 U_BOOT_CMD (pause, 2, 0, do_pause,
-	    "pause   - sleep processor until any key is pressed with poll time of N seconds\n",
+	    "sleep processor until any key is pressed with poll time of N seconds",
 	    "N\n"
 	    "    - sleep processor until any key is pressed with poll time of N seconds\n"
 	    "pause\n"
-	    "    - sleep processor until any key is pressed with poll time of 1 second\n");
+	    "    - sleep processor until any key is pressed with poll time of 1 second");
 
 U_BOOT_CMD (swrecon, 1, 0, do_swreconfig,
-	    "swrecon - trigger a board reconfigure to the software selected configuration\n",
+	    "trigger a board reconfigure to the software selected configuration",
 	    "\n"
-	    "    - trigger a board reconfigure to the software selected configuration\n");
+	    "    - trigger a board reconfigure to the software selected configuration");
+
+int board_eth_init(bd_t *bis)
+{
+	return pci_eth_init(bis);
+}

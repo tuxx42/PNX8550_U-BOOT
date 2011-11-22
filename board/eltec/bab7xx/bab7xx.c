@@ -30,6 +30,7 @@
 #include <74xx_7xx.h>
 #include <ns87308.h>
 #include <video_fb.h>
+#include <netdev.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -43,7 +44,7 @@ ulong bab7xx_get_bus_freq (void)
 	 * The GPIO Port 1 on BAB7xx reflects the bus speed.
 	 */
 	volatile struct GPIO *gpio =
-		(struct GPIO *) (CFG_ISA_IO + CFG_NS87308_GPIO_BASE);
+		(struct GPIO *) (CONFIG_SYS_ISA_IO + CONFIG_SYS_NS87308_GPIO_BASE);
 
 	unsigned char data = gpio->dta1;
 
@@ -86,7 +87,7 @@ int checkcpu (void)
 
 int checkboard (void)
 {
-#ifdef CFG_ADDRESS_MAP_A
+#ifdef CONFIG_SYS_ADDRESS_MAP_A
 	puts ("Board: ELTEC BAB7xx PReP\n");
 #else
 	puts ("Board: ELTEC BAB7xx CHRP\n");
@@ -125,16 +126,16 @@ long int dram_size (int board_type)
 
 	register unsigned long i, msar1, mear1, memSize;
 
-#if defined(CFG_MEMTEST)
+#if defined(CONFIG_SYS_MEMTEST)
 	register unsigned long reg;
 
 	printf ("Testing DRAM\n");
 
 	/* write each mem addr with it's address */
-	for (reg = CFG_MEMTEST_START; reg < CFG_MEMTEST_END; reg += 4)
+	for (reg = CONFIG_SYS_MEMTEST_START; reg < CONFIG_SYS_MEMTEST_END; reg += 4)
 		*reg = reg;
 
-	for (reg = CFG_MEMTEST_START; reg < CFG_MEMTEST_END; reg += 4) {
+	for (reg = CONFIG_SYS_MEMTEST_START; reg < CONFIG_SYS_MEMTEST_END; reg += 4) {
 		if (*reg != reg)
 			return -1;
 	}
@@ -162,7 +163,7 @@ long int dram_size (int board_type)
 
 /* ------------------------------------------------------------------------- */
 
-long int initdram (int board_type)
+phys_size_t initdram (int board_type)
 {
 	return dram_size (board_type);
 }
@@ -183,7 +184,7 @@ void after_reloc (ulong dest_addr)
  * do_reset is done here because in this case it is board specific, since the
  * 7xx CPUs can only be reset by external HW (the RTC in this case).
  */
-void do_reset (cmd_tbl_t * cmdtp, bd_t * bd, int flag, int argc, char *argv[])
+int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #if defined(CONFIG_RTC_MK48T59)
 	/* trigger watchdog immediately */
@@ -191,6 +192,7 @@ void do_reset (cmd_tbl_t * cmdtp, bd_t * bd, int flag, int argc, char *argv[])
 #else
 #error "You must define the macro CONFIG_RTC_MK48T59."
 #endif
+	return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -244,3 +246,8 @@ void video_get_info_str (int line_number, char *info)
 #endif
 
 /*---------------------------------------------------------------------------*/
+
+int board_eth_init(bd_t *bis)
+{
+	return pci_eth_init(bis);
+}

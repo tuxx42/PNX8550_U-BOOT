@@ -34,7 +34,7 @@ DECLARE_GLOBAL_DATA_PTR;
  * Board Special Commands: FPGA load/store, EEPROM erase
  */
 
-#if (CONFIG_COMMANDS & CFG_CMD_BSP)
+#if defined(CONFIG_CMD_BSP)
 
 #define LOAD_SUCCESS		0
 #define LOAD_FAIL_NOCONF	1
@@ -75,14 +75,14 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 
 int
-fpga_load (int mezz, uchar *addr, ulong size)
+fpga_load(int mezz, const uchar *addr, ulong size)
 {
 	hymod_conf_t *cp = &gd->bd->bi_hymod_conf;
 	xlx_info_t *fp;
 	xlx_iopins_t *fpgaio;
 	volatile uchar *fpgabase;
 	volatile uint cnt;
-	uchar *eaddr = addr + size;
+	const uchar *eaddr = addr + size;
 	int result;
 
 	if (mezz)
@@ -141,7 +141,7 @@ fpga_load (int mezz, uchar *addr, ulong size)
 
 /* ------------------------------------------------------------------------- */
 int
-do_fpga (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+do_fpga (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	uchar *addr, *save_addr;
 	ulong size;
@@ -272,12 +272,11 @@ do_fpga (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		break;
 	}
 
-	printf ("Usage:\n%s\n", cmdtp->usage);
-	return 1;
+	return cmd_usage(cmdtp);
 }
 U_BOOT_CMD(
 	fpga,	6,	1,	do_fpga,
-	"fpga    - FPGA sub-system\n",
+	"FPGA sub-system",
 	"load [type] addr size\n"
 	"  - write the configuration data at memory address `addr',\n"
 	"    size `size' bytes, into the FPGA of type `type' (either\n"
@@ -297,14 +296,14 @@ U_BOOT_CMD(
 	"fpga info\n"
 	"  - print information about the Hymod FPGA, namely the\n"
 	"    memory addresses at which the four FPGA local bus\n"
-	"    address spaces appear in the physical address space\n"
+	"    address spaces appear in the physical address space"
 );
 /* ------------------------------------------------------------------------- */
 int
-do_eecl (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+do_eecl (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	uchar data[HYMOD_EEPROM_SIZE];
-	uint addr = CFG_I2C_EEPROM_ADDR;
+	uint addr = CONFIG_SYS_I2C_EEPROM_ADDR;
 
 	switch (argc) {
 
@@ -324,8 +323,7 @@ do_eecl (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		/* fall through ... */
 
 	default:
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
+		return cmd_usage(cmdtp);
 	}
 
 	memset (data, 0, HYMOD_EEPROM_SIZE);
@@ -336,17 +334,17 @@ do_eecl (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 }
 U_BOOT_CMD(
 	eeclear,	1,	0,	do_eecl,
-	"eeclear - Clear the eeprom on a Hymod board \n",
+	"Clear the eeprom on a Hymod board",
 	"[type]\n"
 	"  - write zeroes into the EEPROM on the board of type `type'\n"
 	"    (`type' is either `main' or `mezz' - default `main')\n"
-	"    Note: the EEPROM write enable jumper must be installed\n"
+	"    Note: the EEPROM write enable jumper must be installed"
 );
 
 /* ------------------------------------------------------------------------- */
 
 int
-do_htest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+do_htest (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #if 0
 	int rc;
@@ -402,6 +400,4 @@ do_htest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return 0;
 }
 
-#endif	/* CFG_CMD_BSP */
-
-/* ------------------------------------------------------------------------- */
+#endif

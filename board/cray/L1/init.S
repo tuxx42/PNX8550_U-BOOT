@@ -1,5 +1,9 @@
 /*------------------------------------------------------------------------------+ */
 /* */
+/*       This source code is dual-licensed.  You may use it under the terms */
+/*       of the GNU General Public License version 2, or under the license  */
+/*       below.                                                             */
+/*                                                                          */
 /*       This source code has been made available to you by IBM on an AS-IS */
 /*       basis.  Anyone receiving this source is licensed under IBM */
 /*       copyrights to use it in any way he or she deems fit, including */
@@ -37,7 +41,7 @@
 /*	Bank 6 - not used */
 /*	Bank 7 - FPGA registers */
 /*-----------------------------------------------------------------------------#include <config.h> */
-#include <ppc4xx.h>
+#include <asm/ppc4xx.h>
 
 #define _LINUX_CONFIG_H 1	/* avoid reading Linux autoconf.h file	*/
 
@@ -83,17 +87,17 @@ ext_bus_cntlr_init:
 	/* Peripheral Bank 0 (Flash) initialization */
 	/*---------------------------------------------------------------------- */
 		/* 0x7F8FFE80 slowest boot */
-	addi    r4,0,pb0ap
-	mtdcr   ebccfga,r4
+	addi    r4,0,PB1AP
+	mtdcr   EBC0_CFGADDR,r4
 	addis   r4,0,0x9B01
 	ori     r4,r4,0x5480
-	mtdcr   ebccfgd,r4
+	mtdcr   EBC0_CFGDATA,r4
 
-	addi    r4,0,pb0cr
-	mtdcr   ebccfga,r4
+	addi    r4,0,PB0CR
+	mtdcr   EBC0_CFGADDR,r4
 	addis   r4,0,0xFFC5           /* BAS=0xFFC,BS=0x4(4MB),BU=0x3(R/W), */
 	ori     r4,r4,0x8000          /* BW=0x0( 8 bits) */
-	mtdcr   ebccfgd,r4
+	mtdcr   EBC0_CFGDATA,r4
 
 	blr
 
@@ -121,27 +125,16 @@ ext_bus_cntlr_init:
 		/* all reserved bits=0 */
 	/*---------------------------------------------------------------------- */
 	/*---------------------------------------------------------------------- */
-	addi    r4,0,pb1ap
-	mtdcr   ebccfga,r4
+	addi    r4,0,PB1AP
+	mtdcr   EBC0_CFGADDR,r4
 	addis   r4,0,0x0185		/* hiword */
 	ori     r4,r4,0x4380	/* loword */
-	mtdcr   ebccfgd,r4
+	mtdcr   EBC0_CFGDATA,r4
 
-	addi    r4,0,pb1cr
-	mtdcr   ebccfga,r4
+	addi    r4,0,PB1CR
+	mtdcr   EBC0_CFGADDR,r4
 	addis   r4,0,0xF001           /* BAS=0xF00,BS=0x0(1MB),BU=0x3(R/W), */
 	ori     r4,r4,0x8000          /* BW=0x0( 8 bits) */
-	mtdcr   ebccfgd,r4
+	mtdcr   EBC0_CFGDATA,r4
 
 	blr
-
-/*----------------------------------------------------------------------------- */
-/* Function:	sdram_init */
-/* Description:	Configures SDRAM memory banks. */
-/*				NOTE: for CrayL1 we have ECC memory, so enable it. */
-/*....now done in C in L1.c:init_sdram for readability. */
-/*----------------------------------------------------------------------------- */
-	.globl  sdram_init
-
-sdram_init:
- blr

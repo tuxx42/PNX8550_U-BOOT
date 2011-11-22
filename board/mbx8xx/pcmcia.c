@@ -6,11 +6,11 @@
 
 #undef	CONFIG_PCMCIA
 
-#if	(CONFIG_COMMANDS & CFG_CMD_PCMCIA)
+#if defined(CONFIG_CMD_PCMCIA)
 #define	CONFIG_PCMCIA
 #endif
 
-#if	(CONFIG_COMMANDS & CFG_CMD_IDE) && defined(CONFIG_IDE_8xx_PCCARD)
+#if defined(CONFIG_CMD_IDE) && defined(CONFIG_IDE_8xx_PCCARD)
 #define	CONFIG_PCMCIA
 #endif
 
@@ -88,10 +88,10 @@ int pcmcia_hardware_enable (int slot)
 
 	udelay (10000);
 
-	immap = (immap_t *) CFG_IMMR;
-	sysp = (sysconf8xx_t *) (&(((immap_t *) CFG_IMMR)->im_siu_conf));
-	pcmp = (pcmconf8xx_t *) (&(((immap_t *) CFG_IMMR)->im_pcmcia));
-	cp = (cpm8xx_t *) (&(((immap_t *) CFG_IMMR)->im_cpm));
+	immap = (immap_t *) CONFIG_SYS_IMMR;
+	sysp = (sysconf8xx_t *) (&(((immap_t *) CONFIG_SYS_IMMR)->im_siu_conf));
+	pcmp = (pcmconf8xx_t *) (&(((immap_t *) CONFIG_SYS_IMMR)->im_pcmcia));
+	cp = (cpm8xx_t *) (&(((immap_t *) CONFIG_SYS_IMMR)->im_cpm));
 
 	/* clear interrupt state, and disable interrupts */
 	pcmp->pcmc_pscr = PCMCIA_MASK (_slot_);
@@ -117,11 +117,7 @@ int pcmcia_hardware_enable (int slot)
 	debug ("[%d] %s: PIPR(%p)=0x%x\n",
 	       __LINE__,__FUNCTION__,
 	       &(pcmp->pcmc_pipr),pcmp->pcmc_pipr);
-#ifndef CONFIG_HMI10
-	if (pcmp->pcmc_pipr & (0x18000000 >> (slot << 4))) {
-#else
 	if (pcmp->pcmc_pipr & (0x10000000 >> (slot << 4))) {
-#endif	/* CONFIG_HMI10 */
 		printf ("   No Card found\n");
 		return (1);
 	}
@@ -156,11 +152,11 @@ int pcmcia_hardware_enable (int slot)
 	return (0);
 	}
 
-#if (CONFIG_COMMANDS & CFG_CMD_PCMCIA)
+#if defined(CONFIG_CMD_PCMCIA)
 int pcmcia_hardware_disable (int slot)
 {
 	return 0;	/* No hardware to disable */
 }
-#endif /* CFG_CMD_PCMCIA */
+#endif
 
 #endif	/* CONFIG_PCMCIA */

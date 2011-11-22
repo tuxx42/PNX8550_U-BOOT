@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2002
- * St‰ubli Faverges - <www.staubli.com>
+ * St√§ubli Faverges - <www.staubli.com>
  * Pierre AUBERT  p.aubert@staubli.com
  *
  * See file CREDITS for list of people who contributed to this
@@ -25,8 +25,6 @@
 #include <common.h>
 #include <config.h>
 #include <malloc.h>
-
-#if (CONFIG_COMMANDS & CFG_CMD_FDOS)
 
 #include "dos.h"
 #include "fdos.h"
@@ -138,5 +136,3 @@ int read_fat (BootSector_t *boot, Fs_t *fs)
     }
     return (0);
 }
-
-#endif

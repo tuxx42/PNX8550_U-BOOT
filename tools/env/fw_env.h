@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2002
+ * (C) Copyright 2002-2008
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
  * See file CREDITS for list of people who contributed to this
@@ -24,7 +24,7 @@
 /*
  * To build the utility with the run-time configuration
  * uncomment the next line.
- * See included "fw_env.config" sample file (TRAB board)
+ * See included "fw_env.config" sample file
  * for notes on configuration.
  */
 #define CONFIG_FILE     "/etc/fw_env.config"
@@ -34,21 +34,23 @@
 #define DEVICE2_NAME      "/dev/mtd2"
 #define DEVICE1_OFFSET    0x0000
 #define ENV1_SIZE         0x4000
-#define DEVICE1_ESIZE     0x4000
 #define DEVICE2_OFFSET    0x0000
 #define ENV2_SIZE         0x4000
-#define DEVICE2_ESIZE     0x4000
 
 #define CONFIG_BAUDRATE		115200
 #define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
 #define CONFIG_BOOTCOMMAND							\
-	"bootp; " 								\
-	"setenv bootargs root=/dev/nfs nfsroot=${serverip}:${rootpath} " 	\
-	"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}::off; " 	\
+	"bootp; "								\
+	"setenv bootargs root=/dev/nfs nfsroot=${serverip}:${rootpath} "	\
+	"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}::off; "	\
 	"bootm"
 
-extern		void  fw_printenv(int argc, char *argv[]);
-extern unsigned char *fw_getenv  (unsigned char *name);
-extern		int   fw_setenv  (int argc, char *argv[]);
+extern int   fw_printenv(int argc, char *argv[]);
+extern char *fw_getenv  (char *name);
+extern int fw_setenv  (int argc, char *argv[]);
+extern int fw_parse_script(char *fname);
+extern int fw_env_open(void);
+extern int fw_env_write(char *name, char *value);
+extern int fw_env_close(void);
 
 extern unsigned	long  crc32	 (unsigned long, const unsigned char *, unsigned);

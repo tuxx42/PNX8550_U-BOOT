@@ -29,42 +29,10 @@
 
 #include <common.h>
 #include <command.h>
-#if (CONFIG_COMMANDS & CFG_CMD_MMC)
-#include <mmc.h>
-#endif
 #ifdef CONFIG_HAS_DATAFLASH
 #include <dataflash.h>
 #endif
-
-#if (CONFIG_COMMANDS & (CFG_CMD_MEMORY	| \
-			CFG_CMD_I2C	| \
-			CFG_CMD_ITEST	| \
-			CFG_CMD_PCI	| \
-			CMD_CMD_PORTIO	) )
-int cmd_get_data_size(char* arg, int default_size)
-{
-	/* Check for a size specification .b, .w or .l.
-	 */
-	int len = strlen(arg);
-	if (len > 2 && arg[len-2] == '.') {
-		switch(arg[len-1]) {
-		case 'b':
-			return 1;
-		case 'w':
-			return 2;
-		case 'l':
-			return 4;
-		case 's':
-			return -2;
-		default:
-			return -1;
-		}
-	}
-	return default_size;
-}
-#endif
-
-#if (CONFIG_COMMANDS & CFG_CMD_MEMORY)
+#include <watchdog.h>
 
 #ifdef	CMD_MEM_DEBUG
 #define	PRINTF(fmt,args...)	printf (fmt ,##args)
@@ -72,14 +40,14 @@ int cmd_get_data_size(char* arg, int default_size)
 #define PRINTF(fmt,args...)
 #endif
 
-static int mod_mem(cmd_tbl_t *, int, int, int, char *[]);
+static int mod_mem(cmd_tbl_t *, int, int, int, char * const []);
 
 /* Display values from last command.
  * Memory modify remembered values are different from display memory.
  */
-uint	dp_last_addr, dp_last_size;
-uint	dp_last_length = 0x40;
-uint	mm_last_addr, mm_last_size;
+static uint	dp_last_addr, dp_last_size;
+static uint	dp_last_length = 0x40;
+static uint	mm_last_addr, mm_last_size;
 
 static	ulong	base_address = 0;
 
@@ -89,11 +57,12 @@ static	ulong	base_address = 0;
  *	md{.b, .w, .l} {addr} {len}
  */
 #define DISP_LINE_LEN	16
-int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong	addr, length;
-	ulong	i, nbytes, linebytes;
-	u_char	*cp;
+#if defined(CONFIG_HAS_DATAFLASH)
+	ulong	nbytes, linebytes;
+#endif
 	int	size;
 	int rc = 0;
 
@@ -104,10 +73,8 @@ int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	size = dp_last_size;
 	length = dp_last_length;
 
-	if (argc < 2) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 2)
+		return cmd_usage(cmdtp);
 
 	if ((flag & CMD_FLAG_REPEAT) == 0) {
 		/* New command specified.  Check for a size specification.
@@ -128,6 +95,7 @@ int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			length = simple_strtoul(argv[2], NULL, 16);
 	}
 
+#if defined(CONFIG_HAS_DATAFLASH)
 	/* Print the lines.
 	 *
 	 * We buffer all read data, so we can make sure data is read only
@@ -136,64 +104,48 @@ int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	nbytes = length * size;
 	do {
 		char	linebuf[DISP_LINE_LEN];
-		uint	*uip = (uint   *)linebuf;
-		ushort	*usp = (ushort *)linebuf;
-		u_char	*ucp = (u_char *)linebuf;
-#ifdef CONFIG_HAS_DATAFLASH
-		int rc;
-#endif
-		printf("%08lx:", addr);
+		void* p;
 		linebytes = (nbytes>DISP_LINE_LEN)?DISP_LINE_LEN:nbytes;
 
-#ifdef CONFIG_HAS_DATAFLASH
-		if ((rc = read_dataflash(addr, (linebytes/size)*size, linebuf)) == DATAFLASH_OK){
-			/* if outside dataflash */
-			/*if (rc != 1) {
-				dataflash_perror (rc);
-				return (1);
-			}*/
-			for (i=0; i<linebytes; i+= size) {
-				if (size == 4) {
-					printf(" %08x", *uip++);
-				} else if (size == 2) {
-					printf(" %04x", *usp++);
-				} else {
-					printf(" %02x", *ucp++);
-				}
-				addr += size;
-			}
+		rc = read_dataflash(addr, (linebytes/size)*size, linebuf);
+		p = (rc == DATAFLASH_OK) ? linebuf : (void*)addr;
+		print_buffer(addr, p, size, linebytes/size, DISP_LINE_LEN/size);
 
-		} else {	/* addr does not correspond to DataFlash */
-#endif
-		for (i=0; i<linebytes; i+= size) {
-			if (size == 4) {
-				printf(" %08x", (*uip++ = *((uint *)addr)));
-			} else if (size == 2) {
-				printf(" %04x", (*usp++ = *((ushort *)addr)));
-			} else {
-				printf(" %02x", (*ucp++ = *((u_char *)addr)));
-			}
-			addr += size;
-		}
-#ifdef CONFIG_HAS_DATAFLASH
-		}
-#endif
-		puts ("    ");
-		cp = (u_char *)linebuf;
-		for (i=0; i<linebytes; i++) {
-			if ((*cp < 0x20) || (*cp > 0x7e))
-				putc ('.');
-			else
-				printf("%c", *cp);
-			cp++;
-		}
-		putc ('\n');
 		nbytes -= linebytes;
+		addr += linebytes;
 		if (ctrlc()) {
 			rc = 1;
 			break;
 		}
 	} while (nbytes > 0);
+#else
+
+# if defined(CONFIG_BLACKFIN)
+	/* See if we're trying to display L1 inst */
+	if (addr_bfin_on_chip_mem(addr)) {
+		char linebuf[DISP_LINE_LEN];
+		ulong linebytes, nbytes = length * size;
+		do {
+			linebytes = (nbytes > DISP_LINE_LEN) ? DISP_LINE_LEN : nbytes;
+			memcpy(linebuf, (void *)addr, linebytes);
+			print_buffer(addr, linebuf, size, linebytes/size, DISP_LINE_LEN/size);
+
+			nbytes -= linebytes;
+			addr += linebytes;
+			if (ctrlc()) {
+				rc = 1;
+				break;
+			}
+		} while (nbytes > 0);
+	} else
+# endif
+
+	{
+		/* Print the lines. */
+		print_buffer(addr, (void*)addr, size, length, DISP_LINE_LEN/size);
+		addr += size*length;
+	}
+#endif
 
 	dp_last_addr = addr;
 	dp_last_length = length;
@@ -201,24 +153,22 @@ int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return (rc);
 }
 
-int do_mem_mm ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_mm ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return mod_mem (cmdtp, 1, flag, argc, argv);
 }
-int do_mem_nm ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_nm ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return mod_mem (cmdtp, 0, flag, argc, argv);
 }
 
-int do_mem_mw ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_mw ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong	addr, writeval, count;
 	int	size;
 
-	if ((argc < 3) || (argc > 4)) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if ((argc < 3) || (argc > 4))
+		return cmd_usage(cmdtp);
 
 	/* Check for size specification.
 	*/
@@ -254,15 +204,13 @@ int do_mem_mw ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 
 #ifdef CONFIG_MX_CYCLIC
-int do_mem_mdc ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_mdc ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
 	ulong count;
 
-	if (argc < 4) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 4)
+		return cmd_usage(cmdtp);
 
 	count = simple_strtoul(argv[3], NULL, 10);
 
@@ -283,15 +231,13 @@ int do_mem_mdc ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return 0;
 }
 
-int do_mem_mwc ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_mwc ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
 	ulong count;
 
-	if (argc < 4) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 4)
+		return cmd_usage(cmdtp);
 
 	count = simple_strtoul(argv[3], NULL, 10);
 
@@ -313,16 +259,14 @@ int do_mem_mwc ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 #endif /* CONFIG_MX_CYCLIC */
 
-int do_mem_cmp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_cmp (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong	addr1, addr2, count, ngood;
 	int	size;
 	int     rcode = 0;
 
-	if (argc != 4) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc != 4)
+		return cmd_usage(cmdtp);
 
 	/* Check for size specification.
 	*/
@@ -340,6 +284,13 @@ int do_mem_cmp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #ifdef CONFIG_HAS_DATAFLASH
 	if (addr_dataflash(addr1) | addr_dataflash(addr2)){
 		puts ("Comparison with DataFlash space not supported.\n\r");
+		return 0;
+	}
+#endif
+
+#ifdef CONFIG_BLACKFIN
+	if (addr_bfin_on_chip_mem(addr1) || addr_bfin_on_chip_mem(addr2)) {
+		puts ("Comparison with L1 instruction memory not supported.\n\r");
 		return 0;
 	}
 #endif
@@ -383,6 +334,10 @@ int do_mem_cmp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		ngood++;
 		addr1 += size;
 		addr2 += size;
+
+		/* reset watchdog from time to time */
+		if ((count % (64 << 10)) == 0)
+			WATCHDOG_RESET();
 	}
 
 	printf("Total of %ld %s%s were the same\n",
@@ -391,15 +346,13 @@ int do_mem_cmp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return rcode;
 }
 
-int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong	addr, dest, count;
 	int	size;
 
-	if (argc != 4) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc != 4)
+		return cmd_usage(cmdtp);
 
 	/* Check for size specification.
 	*/
@@ -419,11 +372,11 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		return 1;
 	}
 
-#ifndef CFG_NO_FLASH
+#ifndef CONFIG_SYS_NO_FLASH
 	/* check if we are copying to Flash */
 	if ( (addr2info(dest) != NULL)
 #ifdef CONFIG_HAS_DATAFLASH
-	   && (!addr_dataflash(addr))
+	   && (!addr_dataflash(dest))
 #endif
 	   ) {
 		int rc;
@@ -434,46 +387,6 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		if (rc != 0) {
 			flash_perror (rc);
 			return (1);
-		}
-		puts ("done\n");
-		return 0;
-	}
-#endif
-
-#if (CONFIG_COMMANDS & CFG_CMD_MMC)
-	if (mmc2info(dest)) {
-		int rc;
-
-		puts ("Copy to MMC... ");
-		switch (rc = mmc_write ((uchar *)addr, dest, count*size)) {
-		case 0:
-			putc ('\n');
-			return 1;
-		case -1:
-			puts ("failed\n");
-			return 1;
-		default:
-			printf ("%s[%d] FIXME: rc=%d\n",__FILE__,__LINE__,rc);
-			return 1;
-		}
-		puts ("done\n");
-		return 0;
-	}
-
-	if (mmc2info(addr)) {
-		int rc;
-
-		puts ("Copy from MMC... ");
-		switch (rc = mmc_read (addr, (uchar *)dest, count*size)) {
-		case 0:
-			putc ('\n');
-			return 1;
-		case -1:
-			puts ("failed\n");
-			return 1;
-		default:
-			printf ("%s[%d] FIXME: rc=%d\n",__FILE__,__LINE__,rc);
-			return 1;
 		}
 		puts ("done\n");
 		return 0;
@@ -498,7 +411,11 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	}
 
 	/* Check if we are copying from DataFlash to RAM */
-	if (addr_dataflash(addr) && !addr_dataflash(dest) && (addr2info(dest)==NULL) ){
+	if (addr_dataflash(addr) && !addr_dataflash(dest)
+#ifndef CONFIG_SYS_NO_FLASH
+				 && (addr2info(dest) == NULL)
+#endif
+	   ){
 		int rc;
 		rc = read_dataflash(addr, count * size, (char *) dest);
 		if (rc != 1) {
@@ -514,6 +431,14 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	}
 #endif
 
+#ifdef CONFIG_BLACKFIN
+	/* See if we're copying to/from L1 inst */
+	if (addr_bfin_on_chip_mem(dest) || addr_bfin_on_chip_mem(addr)) {
+		memcpy((void *)dest, (void *)addr, count * size);
+		return 0;
+	}
+#endif
+
 	while (count-- > 0) {
 		if (size == 4)
 			*((ulong  *)dest) = *((ulong  *)addr);
@@ -523,11 +448,15 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			*((u_char *)dest) = *((u_char *)addr);
 		addr += size;
 		dest += size;
+
+		/* reset watchdog from time to time */
+		if ((count % (64 << 10)) == 0)
+			WATCHDOG_RESET();
 	}
 	return 0;
 }
 
-int do_mem_base (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_base (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	if (argc > 1) {
 		/* Set new base address.
@@ -540,7 +469,7 @@ int do_mem_base (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return 0;
 }
 
-int do_mem_loop (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_loop (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong	addr, length, i, junk;
 	int	size;
@@ -548,10 +477,8 @@ int do_mem_loop (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	volatile ushort *shortp;
 	volatile u_char	*cp;
 
-	if (argc < 3) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 3)
+		return cmd_usage(cmdtp);
 
 	/* Check for a size spefication.
 	 * Defaults to long if no or incorrect specification.
@@ -611,7 +538,7 @@ int do_mem_loop (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 
 #ifdef CONFIG_LOOPW
-int do_mem_loopw (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_loopw (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong	addr, length, i, data;
 	int	size;
@@ -619,10 +546,8 @@ int do_mem_loopw (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	volatile ushort *shortp;
 	volatile u_char	*cp;
 
-	if (argc < 4) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 4)
+		return cmd_usage(cmdtp);
 
 	/* Check for a size spefication.
 	 * Defaults to long if no or incorrect specification.
@@ -687,30 +612,32 @@ int do_mem_loopw (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 /*
  * Perform a memory test. A more complete alternative test can be
- * configured using CFG_ALT_MEMTEST. The complete test loops until
+ * configured using CONFIG_SYS_ALT_MEMTEST. The complete test loops until
  * interrupted by ctrl-c or by a failure of one of the sub-tests.
  */
-int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	vu_long	*addr, *start, *end;
 	ulong	val;
 	ulong	readback;
+	ulong	errs = 0;
+	int iterations = 1;
+	int iteration_limit;
 
-#if defined(CFG_ALT_MEMTEST)
-	vu_long	addr_mask;
+#if defined(CONFIG_SYS_ALT_MEMTEST)
+	vu_long	len;
 	vu_long	offset;
 	vu_long	test_offset;
 	vu_long	pattern;
 	vu_long	temp;
 	vu_long	anti_pattern;
 	vu_long	num_words;
-#if defined(CFG_MEMTEST_SCRATCH)
-	vu_long *dummy = (vu_long*)CFG_MEMTEST_SCRATCH;
+#if defined(CONFIG_SYS_MEMTEST_SCRATCH)
+	vu_long *dummy = (vu_long*)CONFIG_SYS_MEMTEST_SCRATCH;
 #else
 	vu_long *dummy = 0;	/* yes, this is address 0x0, not NULL */
 #endif
 	int	j;
-	int iterations = 1;
 
 	static const ulong bitpattern[] = {
 		0x00000001,	/* single bit */
@@ -725,28 +652,29 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #else
 	ulong	incr;
 	ulong	pattern;
-	int     rcode = 0;
 #endif
 
-	if (argc > 1) {
+	if (argc > 1)
 		start = (ulong *)simple_strtoul(argv[1], NULL, 16);
-	} else {
-		start = (ulong *)CFG_MEMTEST_START;
-	}
+	else
+		start = (ulong *)CONFIG_SYS_MEMTEST_START;
 
-	if (argc > 2) {
+	if (argc > 2)
 		end = (ulong *)simple_strtoul(argv[2], NULL, 16);
-	} else {
-		end = (ulong *)(CFG_MEMTEST_END);
-	}
+	else
+		end = (ulong *)(CONFIG_SYS_MEMTEST_END);
 
-	if (argc > 3) {
+	if (argc > 3)
 		pattern = (ulong)simple_strtoul(argv[3], NULL, 16);
-	} else {
+	else
 		pattern = 0;
-	}
 
-#if defined(CFG_ALT_MEMTEST)
+	if (argc > 4)
+		iteration_limit = (ulong)simple_strtoul(argv[4], NULL, 16);
+	else
+		iteration_limit = 0;
+
+#if defined(CONFIG_SYS_ALT_MEMTEST)
 	printf ("Testing %08x ... %08x:\n", (uint)start, (uint)end);
 	PRINTF("%s:%d: start 0x%p end 0x%p\n",
 		__FUNCTION__, __LINE__, start, end);
@@ -757,8 +685,15 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			return 1;
 		}
 
+
+		if (iteration_limit && iterations > iteration_limit) {
+			printf("Tested %d iteration(s) with %lu errors.\n",
+				iterations-1, errs);
+			return errs != 0;
+		}
+
 		printf("Iteration: %6d\r", iterations);
-		PRINTF("Iteration: %6d\n", iterations);
+		PRINTF("\n");
 		iterations++;
 
 		/*
@@ -786,9 +721,14 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			*dummy  = ~val; /* clear the test data off of the bus */
 			readback = *addr;
 			if(readback != val) {
-			     printf ("FAILURE (data line): "
+			    printf ("FAILURE (data line): "
 				"expected %08lx, actual %08lx\n",
 					  val, readback);
+			    errs++;
+			    if (ctrlc()) {
+				putc ('\n');
+				return 1;
+			    }
 			}
 			*addr  = ~val;
 			*dummy  = val;
@@ -797,6 +737,11 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			    printf ("FAILURE (data line): "
 				"Is %08lx, should be %08lx\n",
 					readback, ~val);
+			    errs++;
+			    if (ctrlc()) {
+				putc ('\n');
+				return 1;
+			    }
 			}
 		    }
 		}
@@ -834,26 +779,19 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		 *              all possible.
 		 *
 		 * Returns:     0 if the test succeeds, 1 if the test fails.
-		 *
-		 * ## NOTE ##	Be sure to specify start and end
-		 *              addresses such that addr_mask has
-		 *              lots of bits set. For example an
-		 *              address range of 01000000 02000000 is
-		 *              bad while a range of 01000000
-		 *              01ffffff is perfect.
 		 */
-		addr_mask = ((ulong)end - (ulong)start)/sizeof(vu_long);
+		len = ((ulong)end - (ulong)start)/sizeof(vu_long);
 		pattern = (vu_long) 0xaaaaaaaa;
 		anti_pattern = (vu_long) 0x55555555;
 
-		PRINTF("%s:%d: addr mask = 0x%.8lx\n",
+		PRINTF("%s:%d: length = 0x%.8lx\n",
 			__FUNCTION__, __LINE__,
-			addr_mask);
+			len);
 		/*
 		 * Write the default pattern at each of the
 		 * power-of-two offsets.
 		 */
-		for (offset = 1; (offset & addr_mask) != 0; offset <<= 1) {
+		for (offset = 1; offset < len; offset <<= 1) {
 			start[offset] = pattern;
 		}
 
@@ -863,30 +801,39 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		test_offset = 0;
 		start[test_offset] = anti_pattern;
 
-		for (offset = 1; (offset & addr_mask) != 0; offset <<= 1) {
+		for (offset = 1; offset < len; offset <<= 1) {
 		    temp = start[offset];
 		    if (temp != pattern) {
 			printf ("\nFAILURE: Address bit stuck high @ 0x%.8lx:"
 				" expected 0x%.8lx, actual 0x%.8lx\n",
 				(ulong)&start[offset], pattern, temp);
-			return 1;
+			errs++;
+			if (ctrlc()) {
+			    putc ('\n');
+			    return 1;
+			}
 		    }
 		}
 		start[test_offset] = pattern;
+		WATCHDOG_RESET();
 
 		/*
 		 * Check for addr bits stuck low or shorted.
 		 */
-		for (test_offset = 1; (test_offset & addr_mask) != 0; test_offset <<= 1) {
+		for (test_offset = 1; test_offset < len; test_offset <<= 1) {
 		    start[test_offset] = anti_pattern;
 
-		    for (offset = 1; (offset & addr_mask) != 0; offset <<= 1) {
+		    for (offset = 1; offset < len; offset <<= 1) {
 			temp = start[offset];
 			if ((temp != pattern) && (offset != test_offset)) {
 			    printf ("\nFAILURE: Address bit stuck low or shorted @"
 				" 0x%.8lx: expected 0x%.8lx, actual 0x%.8lx\n",
 				(ulong)&start[offset], pattern, temp);
-			    return 1;
+			    errs++;
+			    if (ctrlc()) {
+				putc ('\n');
+				return 1;
+			    }
 			}
 		    }
 		    start[test_offset] = pattern;
@@ -910,6 +857,7 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		 * Fill memory with a known pattern.
 		 */
 		for (pattern = 1, offset = 0; offset < num_words; pattern++, offset++) {
+			WATCHDOG_RESET();
 			start[offset] = pattern;
 		}
 
@@ -917,12 +865,17 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		 * Check each location and invert it for the second pass.
 		 */
 		for (pattern = 1, offset = 0; offset < num_words; pattern++, offset++) {
+		    WATCHDOG_RESET();
 		    temp = start[offset];
 		    if (temp != pattern) {
 			printf ("\nFAILURE (read/write) @ 0x%.8lx:"
 				" expected 0x%.8lx, actual 0x%.8lx)\n",
 				(ulong)&start[offset], pattern, temp);
-			return 1;
+			errs++;
+			if (ctrlc()) {
+			    putc ('\n');
+			    return 1;
+			}
 		    }
 
 		    anti_pattern = ~pattern;
@@ -933,13 +886,18 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		 * Check each location for the inverted pattern and zero it.
 		 */
 		for (pattern = 1, offset = 0; offset < num_words; pattern++, offset++) {
+		    WATCHDOG_RESET();
 		    anti_pattern = ~pattern;
 		    temp = start[offset];
 		    if (temp != anti_pattern) {
 			printf ("\nFAILURE (read/write): @ 0x%.8lx:"
 				" expected 0x%.8lx, actual 0x%.8lx)\n",
 				(ulong)&start[offset], anti_pattern, temp);
-			return 1;
+			errs++;
+			if (ctrlc()) {
+			    putc ('\n');
+			    return 1;
+			}
 		    }
 		    start[offset] = 0;
 		}
@@ -953,12 +911,20 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			return 1;
 		}
 
+		if (iteration_limit && iterations > iteration_limit) {
+			printf("Tested %d iteration(s) with %lu errors.\n",
+				iterations-1, errs);
+			return errs != 0;
+		}
+		++iterations;
+
 		printf ("\rPattern %08lX  Writing..."
 			"%12s"
 			"\b\b\b\b\b\b\b\b\b\b",
 			pattern, "");
 
 		for (addr=start,val=pattern; addr<end; addr++) {
+			WATCHDOG_RESET();
 			*addr = val;
 			val  += incr;
 		}
@@ -966,12 +932,17 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		puts ("Reading...");
 
 		for (addr=start,val=pattern; addr<end; addr++) {
+			WATCHDOG_RESET();
 			readback = *addr;
 			if (readback != val) {
 				printf ("\nMem error @ 0x%08X: "
 					"found %08lX, expected %08lX\n",
 					(uint)addr, readback, val);
-				rcode = 1;
+				errs++;
+				if (ctrlc()) {
+					putc ('\n');
+					return 1;
+				}
 			}
 			val += incr;
 		}
@@ -990,8 +961,8 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		}
 		incr = -incr;
 	}
-	return rcode;
 #endif
+	return 0;	/* not reached */
 }
 
 
@@ -1002,16 +973,14 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
  *	nm{.b, .w, .l} {addr}
  */
 static int
-mod_mem(cmd_tbl_t *cmdtp, int incrflag, int flag, int argc, char *argv[])
+mod_mem(cmd_tbl_t *cmdtp, int incrflag, int flag, int argc, char * const argv[])
 {
 	ulong	addr, i;
 	int	nbytes, size;
 	extern char console_buffer[];
 
-	if (argc != 2) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc != 2)
+		return cmd_usage(cmdtp);
 
 #ifdef CONFIG_BOOT_RETRY_TIME
 	reset_cmd_timeout();	/* got a good command to get here */
@@ -1038,6 +1007,13 @@ mod_mem(cmd_tbl_t *cmdtp, int incrflag, int flag, int argc, char *argv[])
 #ifdef CONFIG_HAS_DATAFLASH
 	if (addr_dataflash(addr)){
 		puts ("Can't modify DataFlash in place. Use cp instead.\n\r");
+		return 0;
+	}
+#endif
+
+#ifdef CONFIG_BLACKFIN
+	if (addr_bfin_on_chip_mem(addr)) {
+		puts ("Can't modify L1 instruction in place. Use cp instead.\n\r");
 		return 0;
 	}
 #endif
@@ -1098,25 +1074,25 @@ mod_mem(cmd_tbl_t *cmdtp, int incrflag, int flag, int argc, char *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_CMD_CRC32
+
 #ifndef CONFIG_CRC32_VERIFY
 
-int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr, length;
 	ulong crc;
 	ulong *ptr;
 
-	if (argc < 3) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
+	if (argc < 3)
+		return cmd_usage(cmdtp);
 
 	addr = simple_strtoul (argv[1], NULL, 16);
 	addr += base_address;
 
 	length = simple_strtoul (argv[2], NULL, 16);
 
-	crc = crc32 (0, (const uchar *) addr, length);
+	crc = crc32_wd (0, (const uchar *) addr, length, CHUNKSZ_CRC32);
 
 	printf ("CRC32 for %08lx ... %08lx ==> %08lx\n",
 			addr, addr + length - 1, crc);
@@ -1131,7 +1107,7 @@ int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 #else	/* CONFIG_CRC32_VERIFY */
 
-int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr, length;
 	ulong crc;
@@ -1139,12 +1115,11 @@ int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	ulong vcrc;
 	int verify;
 	int ac;
-	char **av;
+	char * const *av;
 
 	if (argc < 3) {
-  usage:
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
+usage:
+		return cmd_usage(cmdtp);
 	}
 
 	av = argv + 1;
@@ -1162,7 +1137,7 @@ int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	addr += base_address;
 	length = simple_strtoul(*av++, NULL, 16);
 
-	crc = crc32(0, (const uchar *) addr, length);
+	crc = crc32_wd (0, (const uchar *) addr, length, CHUNKSZ_CRC32);
 
 	if (!verify) {
 		printf ("CRC32 for %08lx ... %08lx ==> %08lx\n",
@@ -1185,108 +1160,107 @@ int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 #endif	/* CONFIG_CRC32_VERIFY */
 
+#endif
+
 /**************************************************/
-#if (CONFIG_COMMANDS & CFG_CMD_MEMORY)
 U_BOOT_CMD(
-	md,     3,     1,      do_mem_md,
-	"md      - memory display\n",
-	"[.b, .w, .l] address [# of objects]\n    - memory display\n"
+	md,	3,	1,	do_mem_md,
+	"memory display",
+	"[.b, .w, .l] address [# of objects]"
 );
 
 
 U_BOOT_CMD(
-	mm,     2,      1,       do_mem_mm,
-	"mm      - memory modify (auto-incrementing)\n",
-	"[.b, .w, .l] address\n" "    - memory modify, auto increment address\n"
+	mm,	2,	1,	do_mem_mm,
+	"memory modify (auto-incrementing address)",
+	"[.b, .w, .l] address"
 );
 
 
 U_BOOT_CMD(
-	nm,     2,	    1,     	do_mem_nm,
-	"nm      - memory modify (constant address)\n",
-	"[.b, .w, .l] address\n    - memory modify, read and keep address\n"
+	nm,	2,	1,	do_mem_nm,
+	"memory modify (constant address)",
+	"[.b, .w, .l] address"
 );
 
 U_BOOT_CMD(
-	mw,    4,    1,     do_mem_mw,
-	"mw      - memory write (fill)\n",
-	"[.b, .w, .l] address value [count]\n    - write memory\n"
+	mw,	4,	1,	do_mem_mw,
+	"memory write (fill)",
+	"[.b, .w, .l] address value [count]"
 );
 
 U_BOOT_CMD(
-	cp,    4,    1,    do_mem_cp,
-	"cp      - memory copy\n",
-	"[.b, .w, .l] source target count\n    - copy memory\n"
+	cp,	4,	1,	do_mem_cp,
+	"memory copy",
+	"[.b, .w, .l] source target count"
 );
 
 U_BOOT_CMD(
-	cmp,    4,     1,     do_mem_cmp,
-	"cmp     - memory compare\n",
-	"[.b, .w, .l] addr1 addr2 count\n    - compare memory\n"
+	cmp,	4,	1,	do_mem_cmp,
+	"memory compare",
+	"[.b, .w, .l] addr1 addr2 count"
 );
+
+#ifdef CONFIG_CMD_CRC32
 
 #ifndef CONFIG_CRC32_VERIFY
 
 U_BOOT_CMD(
-	crc32,    4,    1,     do_mem_crc,
-	"crc32   - checksum calculation\n",
-	"address count [addr]\n    - compute CRC32 checksum [save at addr]\n"
+	crc32,	4,	1,	do_mem_crc,
+	"checksum calculation",
+	"address count [addr]\n    - compute CRC32 checksum [save at addr]"
 );
 
 #else	/* CONFIG_CRC32_VERIFY */
 
 U_BOOT_CMD(
-	crc32,    5,    1,     do_mem_crc,
-	"crc32   - checksum calculation\n",
+	crc32,	5,	1,	do_mem_crc,
+	"checksum calculation",
 	"address count [addr]\n    - compute CRC32 checksum [save at addr]\n"
-	"-v address count crc\n    - verify crc of memory area\n"
+	"-v address count crc\n    - verify crc of memory area"
 );
 
 #endif	/* CONFIG_CRC32_VERIFY */
 
+#endif
+
 U_BOOT_CMD(
-	base,    2,    1,     do_mem_base,
-	"base    - print or set address offset\n",
+	base,	2,	1,	do_mem_base,
+	"print or set address offset",
 	"\n    - print address offset for memory commands\n"
-	"base off\n    - set address offset for memory commands to 'off'\n"
+	"base off\n    - set address offset for memory commands to 'off'"
 );
 
 U_BOOT_CMD(
-	loop,    3,    1,    do_mem_loop,
-	"loop    - infinite loop on address range\n",
-	"[.b, .w, .l] address number_of_objects\n"
-	"    - loop on a set of addresses\n"
+	loop,	3,	1,	do_mem_loop,
+	"infinite loop on address range",
+	"[.b, .w, .l] address number_of_objects"
 );
 
 #ifdef CONFIG_LOOPW
 U_BOOT_CMD(
-	loopw,    4,    1,    do_mem_loopw,
-	"loopw   - infinite write loop on address range\n",
-	"[.b, .w, .l] address number_of_objects data_to_write\n"
-	"    - loop on a set of addresses\n"
+	loopw,	4,	1,	do_mem_loopw,
+	"infinite write loop on address range",
+	"[.b, .w, .l] address number_of_objects data_to_write"
 );
 #endif /* CONFIG_LOOPW */
 
 U_BOOT_CMD(
-	mtest,    4,    1,     do_mem_mtest,
-	"mtest   - simple RAM test\n",
-	"[start [end [pattern]]]\n"
-	"    - simple RAM read/write test\n"
+	mtest,	5,	1,	do_mem_mtest,
+	"simple RAM read/write test",
+	"[start [end [pattern [iterations]]]]"
 );
 
 #ifdef CONFIG_MX_CYCLIC
 U_BOOT_CMD(
-	mdc,     4,     1,      do_mem_mdc,
-	"mdc     - memory display cyclic\n",
-	"[.b, .w, .l] address count delay(ms)\n    - memory display cyclic\n"
+	mdc,	4,	1,	do_mem_mdc,
+	"memory display cyclic",
+	"[.b, .w, .l] address count delay(ms)"
 );
 
 U_BOOT_CMD(
-	mwc,     4,     1,      do_mem_mwc,
-	"mwc     - memory write cyclic\n",
-	"[.b, .w, .l] address value delay(ms)\n    - memory write cyclic\n"
+	mwc,	4,	1,	do_mem_mwc,
+	"memory write cyclic",
+	"[.b, .w, .l] address value delay(ms)"
 );
 #endif /* CONFIG_MX_CYCLIC */
-
-#endif
-#endif	/* CFG_CMD_MEMORY */

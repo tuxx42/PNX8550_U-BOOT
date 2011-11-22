@@ -26,6 +26,7 @@
 #include <ioports.h>
 #include <mpc8260.h>
 #include <i2c.h>
+#include <bcd.h>
 
 /* define to initialise the SDRAM on the local bus */
 #undef INIT_LOCAL_BUS_SDRAM
@@ -208,16 +209,14 @@ void read_RS5C372_time (struct tm *timedate)
 {
 	unsigned char buffer[8];
 
-#define BCD_TO_BIN(val) ((val)=((val)&15) + ((val)>>4)*10)
-
-	if (i2c_read (RS5C372_PPC_I2C_ADR, 0, 1, buffer, sizeof (buffer))) {
-		timedate->tm_sec = BCD_TO_BIN (buffer[0]);
-		timedate->tm_min = BCD_TO_BIN (buffer[1]);
-		timedate->tm_hour = BCD_TO_BIN (buffer[2]);
-		timedate->tm_wday = BCD_TO_BIN (buffer[3]);
-		timedate->tm_mday = BCD_TO_BIN (buffer[4]);
-		timedate->tm_mon = BCD_TO_BIN (buffer[5]);
-		timedate->tm_year = BCD_TO_BIN (buffer[6]) + 2000;
+	if (! i2c_read (RS5C372_PPC_I2C_ADR, 0, 1, buffer, sizeof (buffer))) {
+		timedate->tm_sec = bcd2bin (buffer[0]);
+		timedate->tm_min = bcd2bin (buffer[1]);
+		timedate->tm_hour = bcd2bin (buffer[2]);
+		timedate->tm_wday = bcd2bin (buffer[3]);
+		timedate->tm_mday = bcd2bin (buffer[4]);
+		timedate->tm_mon = bcd2bin (buffer[5]);
+		timedate->tm_year = bcd2bin (buffer[6]) + 2000;
 	} else {
 		/*printf("i2c error %02x\n", rc); */
 		memset (timedate, 0, sizeof (struct tm));
@@ -231,7 +230,7 @@ int read_LM84_temp (int address)
 	unsigned char buffer[8];
 	/*int rc;*/
 
-	if (i2c_read (address, 0, 1, buffer, 1)) {
+	if (! i2c_read (address, 0, 1, buffer, 1)) {
 		return (int) buffer[0];
 	} else {
 		/*printf("i2c error %02x\n", rc); */
@@ -253,7 +252,7 @@ int checkboard (void)
 	puts ("Board: Rohde & Schwarz 8260 Protocol Board\n");
 
 	/* initialise i2c */
-	i2c_init (CFG_I2C_SPEED, CFG_I2C_SLAVE);
+	i2c_init (CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
 
 	read_RS5C372_time (&timedate);
 	printf ("  Time:  %02d:%02d:%02d\n",
@@ -282,9 +281,9 @@ int misc_init_f (void)
 
 /* ------------------------------------------------------------------------- */
 
-long int initdram (int board_type)
+phys_size_t initdram (int board_type)
 {
-	volatile immap_t *immap = (immap_t *) CFG_IMMR;
+	volatile immap_t *immap = (immap_t *) CONFIG_SYS_IMMR;
 	volatile memctl8260_t *memctl = &immap->im_memctl;
 
 #ifdef INIT_LOCAL_BUS_SDRAM
@@ -317,7 +316,7 @@ long int initdram (int board_type)
 		 *
 		 * The appropriate BRx/ORx registers have already
 		 * been set when we get here (see cpu_init_f). The
-		 * SDRAM can be accessed at the address CFG_SDRAM_BASE.
+		 * SDRAM can be accessed at the address CONFIG_SYS_SDRAM_BASE.
 		 */
 		memctl->memc_mptpr = 0x2000;
 		memctl->memc_mar = 0x0200;
@@ -330,7 +329,7 @@ long int initdram (int board_type)
 		memctl->memc_lsrt = 0x0b;
 		memctl->memc_lurt = 0x00;
 		ramaddr = (uchar *) PHYS_SDRAM_LOCAL;
-		sdmr = CFG_LSDMR & ~(PSDMR_OP_MSK | PSDMR_RFEN | PSDMR_PBI);
+		sdmr = CONFIG_SYS_LSDMR & ~(PSDMR_OP_MSK | PSDMR_RFEN | PSDMR_PBI);
 		memctl->memc_lsdmr = sdmr | PSDMR_OP_PREA;
 		*ramaddr = 0xff;
 		for (i = 0; i < 8; i++) {
@@ -339,13 +338,13 @@ long int initdram (int board_type)
 		}
 		memctl->memc_lsdmr = sdmr | PSDMR_OP_MRW;
 		*ramaddr = 0xff;
-		memctl->memc_lsdmr = CFG_LSDMR | PSDMR_OP_NORM;
+		memctl->memc_lsdmr = CONFIG_SYS_LSDMR | PSDMR_OP_NORM;
 #endif
 		/* initialise 60x bus ram */
 		memctl->memc_psrt = 0x0b;
 		memctl->memc_purt = 0x08;
 		ramaddr32 = (ulong *) PHYS_SDRAM_60X;
-		sdmr = CFG_PSDMR & ~(PSDMR_OP_MSK | PSDMR_RFEN | PSDMR_PBI);
+		sdmr = CONFIG_SYS_PSDMR & ~(PSDMR_OP_MSK | PSDMR_RFEN | PSDMR_PBI);
 		memctl->memc_psdmr = sdmr | PSDMR_OP_PREA;
 		ramaddr32[0] = 0x00ff00ff;
 		ramaddr32[1] = 0x00ff00ff;

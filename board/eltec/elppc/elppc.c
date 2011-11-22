@@ -25,6 +25,7 @@
 #include <command.h>
 #include <mpc106.h>
 #include <video_fb.h>
+#include <netdev.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -67,16 +68,16 @@ long int dram_size (int board_type)
 
 	register unsigned long i, msar1, mear1, memSize;
 
-#if defined(CFG_MEMTEST)
+#if defined(CONFIG_SYS_MEMTEST)
 	register unsigned long reg;
 
 	printf ("Testing DRAM\n");
 
 	/* write each mem addr with it's address */
-	for (reg = CFG_MEMTEST_START; reg < CFG_MEMTEST_END; reg += 4)
+	for (reg = CONFIG_SYS_MEMTEST_START; reg < CONFIG_SYS_MEMTEST_END; reg += 4)
 		*reg = reg;
 
-	for (reg = CFG_MEMTEST_START; reg < CFG_MEMTEST_END; reg += 4) {
+	for (reg = CONFIG_SYS_MEMTEST_START; reg < CONFIG_SYS_MEMTEST_END; reg += 4) {
 		if (*reg != reg)
 			return -1;
 	}
@@ -104,7 +105,7 @@ long int dram_size (int board_type)
 
 /* ------------------------------------------------------------------------- */
 
-long int initdram (int board_type)
+phys_size_t initdram (int board_type)
 {
 	return dram_size (board_type);
 }
@@ -116,7 +117,7 @@ long int initdram (int board_type)
  * Register PI in the MPC 107 (at offset 0x41090 of the Embedded Utilities
  * Memory Block).
  */
-int do_reset (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_reset (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	out8 (MPC107_EUMB_PI, 1);
 	return (0);
@@ -172,3 +173,8 @@ void video_get_info_str (int line_number, char *info)
 	return;
 }
 #endif
+
+int board_eth_init(bd_t *bis)
+{
+	return pci_eth_init(bis);
+}

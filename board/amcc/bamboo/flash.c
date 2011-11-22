@@ -32,9 +32,9 @@
  */
 
 #include <common.h>
-#include <ppc4xx.h>
+#include <asm/ppc4xx.h>
 #include <asm/processor.h>
-#include <ppc440.h>
+#include <asm/ppc440.h>
 #include "bamboo.h"
 
 #undef DEBUG
@@ -45,15 +45,15 @@
 #define DEBUGF(x...)
 #endif				/* DEBUG */
 
-flash_info_t flash_info[CFG_MAX_FLASH_BANKS];	/* info for FLASH chips        */
+flash_info_t flash_info[CONFIG_SYS_MAX_FLASH_BANKS];	/* info for FLASH chips        */
 
 /*
  * Mark big flash bank (16 bit instead of 8 bit access) in address with bit 0
  */
-static unsigned long flash_addr_table[][CFG_MAX_FLASH_BANKS] = {
+static unsigned long flash_addr_table[][CONFIG_SYS_MAX_FLASH_BANKS] = {
 	{0x87800001, 0xFFF00000, 0xFFF80000}, /* 0:boot from small flash */
 	{0x00000000, 0x00000000, 0x00000000}, /* 1:boot from pci 66      */
-	{0x00000000, 0x00000000, 0x00000000}, /* 2:boot from nand flash  */
+	{0x87800001, 0x00000000, 0x00000000}, /* 0:boot from nand flash  */
 	{0x87F00000, 0x87F80000, 0xFFC00001}, /* 3:boot from big flash 33*/
 	{0x87F00000, 0x87F80000, 0xFFC00001}, /* 4:boot from big flash 66*/
 	{0x00000000, 0x00000000, 0x00000000}, /* 5:boot from             */
@@ -79,14 +79,14 @@ static int write_word(flash_info_t * info, ulong dest, ulong data);
 unsigned long flash_init(void)
 {
 	unsigned long total_b = 0;
-	unsigned long size_b[CFG_MAX_FLASH_BANKS];
+	unsigned long size_b[CONFIG_SYS_MAX_FLASH_BANKS];
 	unsigned short index = 0;
 	int i;
 	unsigned long val;
 	unsigned long ebc_boot_size;
 	unsigned long boot_selection;
 
-	mfsdr(sdr_pstrp0, val);
+	mfsdr(SDR0_PINSTP, val);
 	index = (val & SDR0_PSTRP0_BOOTSTRAP_MASK) >> 29;
 
 	if ((index == 5) || (index == 7)) {
@@ -94,7 +94,7 @@ unsigned long flash_init(void)
 		 * Boot Settings in IIC EEprom address 0xA8 or 0xA4
 		 * Read Serial Device Strap Register1 in PPC440EP
 		 */
-		mfsdr(sdr_sdstp1, val);
+		mfsdr(SDR0_SDSTP1, val);
 		boot_selection  = val & SDR0_SDSTP1_BOOT_SEL_MASK;
 		ebc_boot_size   = val & SDR0_SDSTP1_EBC_ROM_BS_MASK;
 
@@ -128,16 +128,16 @@ unsigned long flash_init(void)
 	DEBUGF("FLASH: Index: %d\n", index);
 
 	/* Init: no FLASHes known */
-	for (i = 0; i < CFG_MAX_FLASH_BANKS; ++i) {
+	for (i = 0; i < CONFIG_SYS_MAX_FLASH_BANKS; ++i) {
 		flash_info[i].flash_id = FLASH_UNKNOWN;
 		flash_info[i].sector_count = -1;
 		flash_info[i].size = 0;
 
 		/* check whether the address is 0 */
-		if (flash_addr_table[index][i] == 0) {
+		if (flash_addr_table[index][i] == 0)
 			continue;
-		}
 
+		DEBUGF("Detection bank %d...\n", i);
 		/* call flash_get_size() to initialize sector address */
 		size_b[i] = flash_get_size((vu_long *) flash_addr_table[index][i],
 				   &flash_info[i]);
@@ -150,16 +150,16 @@ unsigned long flash_init(void)
 		}
 
 		/* Monitor protection ON by default */
-		(void)flash_protect(FLAG_PROTECT_SET, CFG_MONITOR_BASE,
-				    CFG_MONITOR_BASE + CFG_MONITOR_LEN - 1,
+		(void)flash_protect(FLAG_PROTECT_SET, CONFIG_SYS_MONITOR_BASE,
+				    CONFIG_SYS_MONITOR_BASE + CONFIG_SYS_MONITOR_LEN - 1,
 				    &flash_info[i]);
-#if defined(CFG_ENV_IS_IN_FLASH)
-		(void)flash_protect(FLAG_PROTECT_SET, CFG_ENV_ADDR,
-				    CFG_ENV_ADDR + CFG_ENV_SECT_SIZE - 1,
+#if defined(CONFIG_ENV_IS_IN_FLASH)
+		(void)flash_protect(FLAG_PROTECT_SET, CONFIG_ENV_ADDR,
+				    CONFIG_ENV_ADDR + CONFIG_ENV_SECT_SIZE - 1,
 				    &flash_info[i]);
-#if defined(CFG_ENV_IS_IN_FLASH) && defined(CFG_ENV_ADDR_REDUND)
-		(void)flash_protect(FLAG_PROTECT_SET, CFG_ENV_ADDR_REDUND,
-				    CFG_ENV_ADDR_REDUND + CFG_ENV_SECT_SIZE - 1,
+#if defined(CONFIG_ENV_IS_IN_FLASH) && defined(CONFIG_ENV_ADDR_REDUND)
+		(void)flash_protect(FLAG_PROTECT_SET, CONFIG_ENV_ADDR_REDUND,
+				    CONFIG_ENV_ADDR_REDUND + CONFIG_ENV_SECT_SIZE - 1,
 				    &flash_info[i]);
 #endif
 #endif

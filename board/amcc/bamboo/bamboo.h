@@ -110,17 +110,6 @@
 /*----------------------------------------------------------------------------+
 | SDR Configuration registers
 +----------------------------------------------------------------------------*/
-/* Serial Device Strap Reg 0 */
-#define SDR0_SDSTP0		     0x0020
-/* Serial Device Strap Reg 1 */
-#define SDR0_SDSTP1		     0x0021
-/* Serial Device Strap Reg 2 */
-#define SDR0_SDSTP2		     SDR0_STRP2
-/* Serial Device Strap Reg 3 */
-#define SDR0_SDSTP3		     SDR0_STRP3
-
-#define sdr_pstrp0		     0x0040
-
 #define	  SDR0_SDSTP1_EBC_ROM_BS_MASK  0x00006000  /* EBC Boot Size Mask */
 #define	  SDR0_SDSTP1_EBC_ROM_BS_32BIT 0x00004000    /* EBC 32 bits */
 #define	  SDR0_SDSTP1_EBC_ROM_BS_16BIT 0x00002000    /* EBC 16 Bits */
@@ -264,18 +253,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define GPIO_GROUP_MAX	    2
-#define GPIO_MAX	    32
-#define GPIO_ALT1_SEL	    0x40000000	    /* GPIO_OUT value put in GPIO_TSx for the GPIO nb 0 */
-#define GPIO_ALT2_SEL	    0x80000000	    /* GPIO_OUT value put in GPIO_TSx for the GPIO nb 1 */
-#define GPIO_ALT3_SEL	    0xC0000000	    /* GPIO_OUT value put in GPIO_TSx for the GPIO nb 2 */
-#define GPIO_MASK	    0xC0000000	    /* GPIO_MASK */
-#define GPIO_IN_SEL	    0x40000000	    /* GPIO_IN value put in GPIO_ISx for the GPIO nb 0 */
-					    /* For the other GPIO number, you must shift */
-
 #define GPIO0		0
 #define GPIO1		1
-
 
 /*#define MAX_SELECTION_NB	CORE_NB */
 #define MAX_CORE_SELECT_NB	22

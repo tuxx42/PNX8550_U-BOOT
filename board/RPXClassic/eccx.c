@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2002
- * St‰ubli Faverges - <www.staubli.com>
+ * St√§ubli Faverges - <www.staubli.com>
  * Pierre AUBERT  p.aubert@staubli.com
  *
  * See file CREDITS for list of people who contributed to this
@@ -299,7 +299,7 @@ void video_get_info_str (int line_number, char *info)
  */
 unsigned int board_video_init (void)
 {
-    volatile immap_t     *immap  = (immap_t *)CFG_IMMR;
+    volatile immap_t     *immap  = (immap_t *)CONFIG_SYS_IMMR;
     volatile memctl8xx_t *memctl = &immap->im_memctl;
 
     /* Program ECCX registers                                                */

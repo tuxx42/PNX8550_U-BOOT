@@ -16,7 +16,7 @@
  *
  */
 
-#include <ppc4xx.h>
+#include <asm/ppc4xx.h>
 
 #include <ppc_asm.tmpl>
 #include <ppc_defs.h>
@@ -27,8 +27,4 @@
 
 	.globl	ext_bus_cntlr_init
 ext_bus_cntlr_init:
-	blr
-
-	.globl	sdram_init
-sdram_init:
 	blr

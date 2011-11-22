@@ -28,8 +28,6 @@
 
 #include <universe.h>
 
-#if (CONFIG_COMMANDS & CFG_CMD_UNIVERSE)
-
 #define PCI_VENDOR PCI_VENDOR_ID_TUNDRA
 #define PCI_DEVICE PCI_DEVICE_ID_TUNDRA_CA91C042
 
@@ -319,7 +317,7 @@ int universe_vme_slave_window(unsigned int vmeAddr, unsigned int pciAddr, int si
 /*
  * Tundra Universe configuration
  */
-int do_universe(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_universe(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr1 = 0, addr2 = 0, size = 0, vam = 0, pms = 0, vdw = 0;
 	char cmd = 'x';
@@ -366,7 +364,7 @@ int do_universe(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(
 	universe,	8,	1,	do_universe,
-	"universe- initialize and configure Turndra Universe\n",
+	"initialize and configure Turndra Universe",
 	"init\n"
 	"    - initialize universe\n"
 	"universe vme [vme_addr] [pci_addr] [size] [vam] [pms]\n"
@@ -384,7 +382,5 @@ U_BOOT_CMD(
 	"                                      03 -> Configuration Space\n"
 	"    [vdw] = VMEbus Maximum Datawidth: 01 -> D8 Data Width\n"
 	"                                      02 -> D16 Data Width\n"
-	"                                      03 -> D32 Data Width\n"
+	"                                      03 -> D32 Data Width"
 );
-
-#endif /* (CONFIG_COMMANDS & CFG_CMD_UNIVERSE) */

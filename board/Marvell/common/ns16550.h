@@ -1,8 +1,8 @@
 /*
  * NS16550 Serial Port
- * originally from linux source (arch/ppc/boot/ns16550.h)
+ * originally from linux source (arch/powerpc/boot/ns16550.h)
  * modified slightly to
- * have addresses as offsets from CFG_ISA_BASE
+ * have addresses as offsets from CONFIG_SYS_ISA_BASE
  * added a few more definitions
  * added prototypes for ns16550.c
  * reduced no of com ports to 2
@@ -51,7 +51,7 @@ struct NS16550
 #define dlm ier
 
 #define FCR_FIFO_EN     0x01    /*fifo enable*/
-#define FCR_RXSR        0x02    /*reciever soft reset*/
+#define FCR_RXSR        0x02    /*receiver soft reset*/
 #define FCR_TXSR        0x04    /*transmitter soft reset*/
 
 

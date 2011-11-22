@@ -22,12 +22,11 @@
  */
 
 OUTPUT_ARCH(powerpc)
-SEARCH_DIR(/lib); SEARCH_DIR(/usr/lib); SEARCH_DIR(/usr/local/lib); SEARCH_DIR(/usr/local/powerpc-any-elf/lib);
 
 MEMORY {
- 	ram  (!rx) : org = 0x00000000 , LENGTH = 8M
- 	code (!rx) : org = 0x00002000 , LENGTH = (4M - 0x2000)
- 	rom   (rx) : org = 0xfff00000 , LENGTH = 512K
+	ram  (!rx) : org = 0x00000000 , LENGTH = 8M
+	code (!rx) : org = 0x00002000 , LENGTH = (4M - 0x2000)
+	rom   (rx) : org = 0xfff00000 , LENGTH = 512K
 }
 
 SECTIONS
@@ -38,7 +37,7 @@ SECTIONS
   PROVIDE(_f_init_rom = .);
 
   .init : {
-      cpu/mpc824x/start.o	(.text)
+      arch/powerpc/cpu/mpc824x/start.o	(.text)
       *(.init)
   } > ram
   _init_size = SIZEOF(.init);
@@ -97,9 +96,9 @@ SECTIONS
 
   .ppcenv	:
   {
-    common/environment.o (.ppcenv)
+    common/env_embedded.o (.ppcenv)
   } > ram
 
-  _end = . ;
+  __bss_end__ = . ;
   PROVIDE (end = .);
 }

@@ -26,15 +26,14 @@
 #include <command.h>
 #include <malloc.h>
 #include <pci.h>
-#include <405gp_pci.h>
+#include <asm/4xx_pci.h>
+#include <asm/io.h>
 
 #include "pci405.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
 /* Prototypes */
-int gunzip(void *, int, unsigned char *, unsigned long *);
-int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);/*cmd_boot.c*/
 unsigned long fpga_done_state(void);
 unsigned long fpga_init_state(void);
 
@@ -57,16 +56,16 @@ const unsigned char fpgadata[] =
  */
 #include "../common/fpga.c"
 
-#define FPGA_DONE_STATE_V11 (in32(GPIO0_IR) & CFG_FPGA_DONE)
-#define FPGA_DONE_STATE_V12 (in32(GPIO0_IR) & CFG_FPGA_DONE_V12)
+#define FPGA_DONE_STATE_V11 (in_be32((void*)GPIO0_IR) & CONFIG_SYS_FPGA_DONE)
+#define FPGA_DONE_STATE_V12 (in_be32((void*)GPIO0_IR) & CONFIG_SYS_FPGA_DONE_V12)
 
-#define FPGA_INIT_STATE_V11 (in32(GPIO0_IR) & CFG_FPGA_INIT)
-#define FPGA_INIT_STATE_V12 (in32(GPIO0_IR) & CFG_FPGA_INIT_V12)
+#define FPGA_INIT_STATE_V11 (in_be32((void*)GPIO0_IR) & CONFIG_SYS_FPGA_INIT)
+#define FPGA_INIT_STATE_V12 (in_be32((void*)GPIO0_IR) & CONFIG_SYS_FPGA_INIT_V12)
 
 
 int board_revision(void)
 {
-	unsigned long cntrl0Reg;
+	unsigned long CPC0_CR0Reg;
 	unsigned long value;
 
 	/*
@@ -76,17 +75,17 @@ int board_revision(void)
 	/*
 	 * Setup GPIO pins (CS2/GPIO11 and CS3/GPIO12 as GPIO)
 	 */
-	cntrl0Reg = mfdcr(cntrl0);
-	mtdcr(cntrl0, cntrl0Reg | 0x03000000);
-	out32(GPIO0_ODR, in32(GPIO0_ODR) & ~0x00100200);
-	out32(GPIO0_TCR, in32(GPIO0_TCR) & ~0x00100200);
+	CPC0_CR0Reg = mfdcr(CPC0_CR0);
+	mtdcr(CPC0_CR0, CPC0_CR0Reg | 0x03000000);
+	out_be32((void*)GPIO0_ODR, in_be32((void*)GPIO0_ODR) & ~0x00100200);
+	out_be32((void*)GPIO0_TCR, in_be32((void*)GPIO0_TCR) & ~0x00100200);
 	udelay(1000);                   /* wait some time before reading input */
-	value = in32(GPIO0_IR) & 0x00100200;       /* get config bits */
+	value = in_be32((void*)GPIO0_IR) & 0x00100200;       /* get config bits */
 
 	/*
 	 * Restore GPIO settings
 	 */
-	mtdcr(cntrl0, cntrl0Reg);
+	mtdcr(CPC0_CR0, CPC0_CR0Reg);
 
 	switch (value) {
 	case 0x00100200:
@@ -132,15 +131,15 @@ unsigned long fpga_init_state(void)
 
 int board_early_init_f (void)
 {
-	unsigned long cntrl0Reg;
+	unsigned long CPC0_CR0Reg;
 
 	/*
 	 * First pull fpga-prg pin low, to disable fpga logic (on version 1.2 board)
 	 */
-	out32(GPIO0_ODR, 0x00000000);        /* no open drain pins      */
-	out32(GPIO0_TCR, CFG_FPGA_PRG);      /* setup for output        */
-	out32(GPIO0_OR,  CFG_FPGA_PRG);      /* set output pins to high */
-	out32(GPIO0_OR, 0);                  /* pull prg low            */
+	out_be32((void*)GPIO0_ODR, 0x00000000);        /* no open drain pins      */
+	out_be32((void*)GPIO0_TCR, CONFIG_SYS_FPGA_PRG);      /* setup for output        */
+	out_be32((void*)GPIO0_OR,  CONFIG_SYS_FPGA_PRG);      /* set output pins to high */
+	out_be32((void*)GPIO0_OR, 0);                  /* pull prg low            */
 
 	/*
 	 * IRQ 0-15  405GP internally generated; active high; level sensitive
@@ -154,41 +153,32 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5) FPGA Timestamp; active low; level sensitive
 	 * IRQ 31 (EXT IRQ 6) PCI Reset; active low; level sensitive
 	 */
-	mtdcr(uicsr, 0xFFFFFFFF);        /* clear all ints */
-	mtdcr(uicer, 0x00000000);        /* disable all ints */
-	mtdcr(uiccr, 0x00000000);        /* set all to be non-critical*/
-	mtdcr(uicpr, 0xFFFFFF80);        /* set int polarities */
-	mtdcr(uictr, 0x10000000);        /* set int trigger levels */
-	mtdcr(uicvcr, 0x00000001);       /* set vect base=0,INT0 highest priority*/
-	mtdcr(uicsr, 0xFFFFFFFF);        /* clear all ints */
+	mtdcr(UIC0SR, 0xFFFFFFFF);        /* clear all ints */
+	mtdcr(UIC0ER, 0x00000000);        /* disable all ints */
+	mtdcr(UIC0CR, 0x00000000);        /* set all to be non-critical*/
+	mtdcr(UIC0PR, 0xFFFFFF80);        /* set int polarities */
+	mtdcr(UIC0TR, 0x10000000);        /* set int trigger levels */
+	mtdcr(UIC0VCR, 0x00000001);       /* set vect base=0,INT0 highest priority*/
+	mtdcr(UIC0SR, 0xFFFFFFFF);        /* clear all ints */
 
 	/*
 	 * Setup GPIO pins (IRQ4/GPIO21 as GPIO)
 	 */
-	cntrl0Reg = mfdcr(cntrl0);
-	mtdcr(cntrl0, cntrl0Reg | 0x00008000);
+	CPC0_CR0Reg = mfdcr(CPC0_CR0);
+	mtdcr(CPC0_CR0, CPC0_CR0Reg | 0x00008000);
 
 	/*
 	 * Setup GPIO pins (CS6+CS7 as GPIO)
 	 */
-	mtdcr(cntrl0, cntrl0Reg | 0x00300000);
+	mtdcr(CPC0_CR0, CPC0_CR0Reg | 0x00300000);
 
 	/*
 	 * EBC Configuration Register: set ready timeout to 512 ebc-clks -> ca. 25 us
 	 */
-	mtebc (epcr, 0xa8400000); /* ebc always driven */
+	mtebc (EBC0_CFG, 0xa8400000); /* ebc always driven */
 
 	return 0;
 }
-
-
-/* ------------------------------------------------------------------------- */
-
-int misc_init_f (void)
-{
-	return 0;  /* dummy implementation */
-}
-
 
 int misc_init_r (void)
 {
@@ -205,8 +195,8 @@ int misc_init_r (void)
 	 * FPGA can be gzip compressed (malloc) and booted this late.
 	 */
 
-	dst = malloc(CFG_FPGA_MAX_SIZE);
-	if (gunzip (dst, CFG_FPGA_MAX_SIZE, (uchar *)fpgadata, &len) != 0) {
+	dst = malloc(CONFIG_SYS_FPGA_MAX_SIZE);
+	if (gunzip (dst, CONFIG_SYS_FPGA_MAX_SIZE, (uchar *)fpgadata, &len) != 0) {
 		printf ("GUNZIP ERROR - must RESET board to recover\n");
 		do_reset (NULL, 0, 0, NULL);
 	}
@@ -279,32 +269,21 @@ int misc_init_r (void)
 				pci_write_config_dword(PCIDEVID_405GP, i, *ptr++);
 			}
 		}
-		mtdcr(uicsr, 0xFFFFFFFF);        /* clear all ints */
+		mtdcr(UIC0SR, 0xFFFFFFFF);        /* clear all ints */
 
 		*magic = 0;      /* clear pci reconfig magic again */
 	}
 
-#if 1 /* test-only */
 	/*
 	 * Decrease PLB latency timeout and reduce priority of the PCI bridge master
 	 */
 #define PCI0_BRDGOPT1 0x4a
 	pci_write_config_word(PCIDEVID_405GP, PCI0_BRDGOPT1, 0x3f20);
-/*	pci_write_config_word(PCIDEVID_405GP, PCI0_BRDGOPT1, 0x3f60);	*/
 
-#define plb0_acr      0x87
 	/*
 	 * Enable fairness and high bus utilization
 	 */
-	mtdcr(plb0_acr, 0x98000000);
-
-#if 0 /* test-only */
-	printf("CCR0=%08x\n", mfspr(ccr0)); /* test-only */
-/*	mtspr(ccr0, (mfspr(ccr0) & 0xff8fffff) | 0x00100000);	*/
-	mtspr(ccr0, (mfspr(ccr0) & 0xff8fffff) | 0x00000000);
-#endif
-/*	printf("CCR0=%08x\n", mfspr(ccr0)); */ /* test-only */
-#endif
+	mtdcr(PLB0_ACR, 0x98000000);
 
 	free(dst);
 	return (0);
@@ -314,11 +293,10 @@ int misc_init_r (void)
 /*
  * Check Board Identity:
  */
-
 int checkboard (void)
 {
 	char str[64];
-	int i = getenv_r ("serial#", str, sizeof(str));
+	int i = getenv_f("serial#", str, sizeof(str));
 
 	puts ("Board: ");
 
@@ -332,22 +310,22 @@ int checkboard (void)
 	printf(" (Rev 1.%ld", gd->board_type);
 
 	if (gd->board_type >= 2) {
-		unsigned long cntrl0Reg;
+		unsigned long CPC0_CR0Reg;
 		unsigned long value;
 
 		/*
 		 * Setup GPIO pins (Trace/GPIO1 to GPIO)
 		 */
-		cntrl0Reg = mfdcr(cntrl0);
-		mtdcr(cntrl0, cntrl0Reg & ~0x08000000);
-		out32(GPIO0_ODR, in32(GPIO0_ODR) & ~0x40000000);
-		out32(GPIO0_TCR, in32(GPIO0_TCR) & ~0x40000000);
+		CPC0_CR0Reg = mfdcr(CPC0_CR0);
+		mtdcr(CPC0_CR0, CPC0_CR0Reg & ~0x08000000);
+		out_be32((void*)GPIO0_ODR, in_be32((void*)GPIO0_ODR) & ~0x40000000);
+		out_be32((void*)GPIO0_TCR, in_be32((void*)GPIO0_TCR) & ~0x40000000);
 		udelay(1000);                   /* wait some time before reading input */
-		value = in32(GPIO0_IR) & 0x40000000;       /* get config bits */
+		value = in_be32((void*)GPIO0_IR) & 0x40000000;       /* get config bits */
 		if (value) {
 			puts(", 33 MHz PCI");
 		} else {
-			puts(", 66 Mhz PCI");
+			puts(", 66 MHz PCI");
 		}
 	}
 
@@ -357,48 +335,17 @@ int checkboard (void)
 }
 
 /* ------------------------------------------------------------------------- */
-
-long int initdram (int board_type)
-{
-	unsigned long val;
-
-	mtdcr(memcfga, mem_mb0cf);
-	val = mfdcr(memcfgd);
-
-#if 0
-	printf("\nmb0cf=%x\n", val); /* test-only */
-	printf("strap=%x\n", mfdcr(strap)); /* test-only */
-#endif
-
-#if 0 /* test-only: all PCI405 version must report 16mb */
-	return (4*1024*1024 << ((val & 0x000e0000) >> 17));
-#else
-	return (16*1024*1024);
-#endif
-}
-
-/* ------------------------------------------------------------------------- */
-
-int testdram (void)
-{
-	/* TODO: XXX XXX XXX */
-	printf ("test: 16 MB - ok\n");
-
-	return (0);
-}
-
-/* ------------------------------------------------------------------------- */
+#define UART1_MCR 0xef600404
 int wpeeprom(int wp)
 {
 	int wp_state = wp;
-	volatile unsigned char *uart1_mcr = (volatile unsigned char *)0xef600404;
 
 	if (wp == 1) {
-		*uart1_mcr &= ~0x02;
+		out_8((void *)UART1_MCR, in_8((void *)UART1_MCR) & ~0x02);
 	} else if (wp == 0) {
-		*uart1_mcr |= 0x02;
+		out_8((void *)UART1_MCR, in_8((void *)UART1_MCR) | 0x02);
 	} else {
-		if (*uart1_mcr & 0x02) {
+		if (in_8((void *)UART1_MCR) & 0x02) {
 			wp_state = 0;
 		} else {
 			wp_state = 1;
@@ -407,7 +354,7 @@ int wpeeprom(int wp)
 	return wp_state;
 }
 
-int do_wpeeprom(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_wpeeprom(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int wp = -1;
 	if (argc >= 2) {
@@ -425,11 +372,11 @@ int do_wpeeprom(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(
 	wpeeprom,	2,	1,	do_wpeeprom,
-	"wpeeprom - Check/Enable/Disable I2C EEPROM write protection\n",
+	"Check/Enable/Disable I2C EEPROM write protection",
 	"wpeeprom\n"
 	"    - check I2C EEPROM write protection state\n"
 	"wpeeprom 1\n"
 	"    - enable I2C EEPROM write protection\n"
 	"wpeeprom 0\n"
-	"    - disable I2C EEPROM write protection\n"
-	);
+	"    - disable I2C EEPROM write protection"
+);

@@ -28,9 +28,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/*cmd_boot.c*/
-
-extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 extern void lxt971_no_sleep(void);
 
 
@@ -58,7 +55,6 @@ const unsigned char fpgadata[] = {
 int board_early_init_f (void)
 {
 	int index, len, i;
-	volatile unsigned char dummy;
 	int status;
 
 #ifdef FPGA_DEBUG
@@ -116,7 +112,7 @@ int board_early_init_f (void)
 	/*
 	 * Init FPGA via RESET (read access on CS3)
 	 */
-	dummy = *(unsigned char *) 0xf0200000;
+	in_8((void *)0xf0200000);
 
 	/*
 	 * IRQ 0-15  405GP internally generated; active high; level sensitive
@@ -130,14 +126,14 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5) PCI SLOT 3; active low; level sensitive
 	 * IRQ 31 (EXT IRQ 6) COMPACT FLASH; active high; level sensitive
 	 */
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr (uicer, 0x00000000);	/* disable all ints */
-	mtdcr (uiccr, 0x00000000);	/* set all to be non-critical */
-	/*  mtdcr(uicpr, 0xFFFFFF81);   /  set int polarities */
-	mtdcr (uicpr, 0xFFFFFF80);	/* set int polarities */
-	mtdcr (uictr, 0x10000000);	/* set int trigger levels */
-	mtdcr (uicvcr, 0x00000001);	/* set vect base=0,INT0 highest priority */
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0ER, 0x00000000);	/* disable all ints */
+	mtdcr (UIC0CR, 0x00000000);	/* set all to be non-critical */
+	/*  mtdcr(UIC0PR, 0xFFFFFF81);   /  set int polarities */
+	mtdcr (UIC0PR, 0xFFFFFF80);	/* set int polarities */
+	mtdcr (UIC0TR, 0x10000000);	/* set int trigger levels */
+	mtdcr (UIC0VCR, 0x00000001);	/* set vect base=0,INT0 highest priority */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 
 	return 0;
 }
@@ -154,7 +150,7 @@ int checkboard (void)
 	int index;
 	int len;
 	char str[64];
-	int i = getenv_r ("serial#", str, sizeof (str));
+	int i = getenv_f("serial#", str, sizeof (str));
 
 	puts ("Board: ");
 
@@ -183,22 +179,3 @@ int checkboard (void)
 
 	return 0;
 }
-
-/* ------------------------------------------------------------------------- */
-
-long int initdram (int board_type)
-{
-	return (16 * 1024 * 1024);
-}
-
-/* ------------------------------------------------------------------------- */
-
-int testdram (void)
-{
-	/* TODO: XXX XXX XXX */
-	printf ("test: 16 MB - ok\n");
-
-	return (0);
-}
-
-/* ------------------------------------------------------------------------- */

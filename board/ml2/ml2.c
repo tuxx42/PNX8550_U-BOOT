@@ -30,30 +30,26 @@ int board_early_init_f (void)
 
 int checkboard (void)
 {
-	char *s = getenv ("serial#");
-	char *e;
+	char buf[64];
+	int i;
+	int l = getenv_f("serial#", buf, sizeof(buf));
 
-	if (!s || strncmp (s, "ML2", 9)) {
+	if (l < 0 || strncmp(buf, "ML2", 9)) {
 		printf ("### No HW ID - assuming ML2");
 	} else {
-		for (e = s; *e; ++e) {
-			if (*e == ' ')
+		for (i = 0; i < l; i++) {
+			if (buf[i] == ' ')
 				break;
-		}
-
-		for (; s < e; ++s) {
-			putc (*s);
+			putc(buf[i]);
 		}
 	}
-
-
 	putc ('\n');
 
 	return (0);
 }
 
 
-long int initdram (int board_type)
+phys_size_t initdram (int board_type)
 {
 	return 32 * 1024 * 1024;
 }

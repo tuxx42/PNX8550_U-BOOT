@@ -27,20 +27,20 @@
 
 include $(TOPDIR)/config.mk
 
-LIB	= $(obj)libext2fs.a
+LIB	= $(obj)libext2fs.o
 
 AOBJS	=
-COBJS	= ext2fs.o dev.o
+COBJS-$(CONFIG_CMD_EXT2) := ext2fs.o dev.o
 
-SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS))
+SRCS	:= $(AOBJS:.o=.S) $(COBJS-y:.o=.c)
+OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS-y))
 
 #CPPFLAGS +=
 
 all:	$(LIB) $(AOBJS)
 
 $(LIB):	$(obj).depend $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
 
 #########################################################################
 

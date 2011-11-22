@@ -23,10 +23,10 @@
 
 #include <common.h>
 
-#define PHYS_FLASH_1 CFG_FLASH_BASE
+#define PHYS_FLASH_1 CONFIG_SYS_FLASH_BASE
 #define FLASH_BANK_SIZE 0x200000
 
-flash_info_t flash_info[CFG_MAX_FLASH_BANKS];
+flash_info_t flash_info[CONFIG_SYS_MAX_FLASH_BANKS];
 
 void flash_print_info (flash_info_t * info)
 {
@@ -74,15 +74,15 @@ unsigned long flash_init (void)
 	int i, j;
 	ulong size = 0;
 
-	for (i = 0; i < CFG_MAX_FLASH_BANKS; i++) {
+	for (i = 0; i < CONFIG_SYS_MAX_FLASH_BANKS; i++) {
 		ulong flashbase = 0;
 
 		flash_info[i].flash_id =
 			(AMD_MANUFACT & FLASH_VENDMASK) |
 			(AMD_ID_PL160CB & FLASH_TYPEMASK);
 		flash_info[i].size = FLASH_BANK_SIZE;
-		flash_info[i].sector_count = CFG_MAX_FLASH_SECT;
-		memset (flash_info[i].protect, 0, CFG_MAX_FLASH_SECT);
+		flash_info[i].sector_count = CONFIG_SYS_MAX_FLASH_SECT;
+		memset (flash_info[i].protect, 0, CONFIG_SYS_MAX_FLASH_SECT);
 		if (i == 0)
 			flashbase = PHYS_FLASH_1;
 		else
@@ -113,8 +113,8 @@ unsigned long flash_init (void)
 	}
 
 	flash_protect (FLAG_PROTECT_SET,
-		       CFG_FLASH_BASE,
-		       CFG_FLASH_BASE + 0x3ffff, &flash_info[0]);
+		       CONFIG_SYS_FLASH_BASE,
+		       CONFIG_SYS_FLASH_BASE + 0x3ffff, &flash_info[0]);
 
 	return size;
 }
@@ -128,8 +128,8 @@ unsigned long flash_init (void)
 #define CMD_PROGRAM		0x00A0
 #define CMD_UNLOCK_BYPASS	0x0020
 
-#define MEM_FLASH_ADDR1		(*(volatile u16 *)(CFG_FLASH_BASE + (0x00000555<<1)))
-#define MEM_FLASH_ADDR2		(*(volatile u16 *)(CFG_FLASH_BASE + (0x000002AA<<1)))
+#define MEM_FLASH_ADDR1		(*(volatile u16 *)(CONFIG_SYS_FLASH_BASE + (0x00000555<<1)))
+#define MEM_FLASH_ADDR2		(*(volatile u16 *)(CONFIG_SYS_FLASH_BASE + (0x000002AA<<1)))
 
 #define BIT_ERASE_DONE		0x0080
 #define BIT_RDY_MASK		0x0080
@@ -147,6 +147,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 	int iflag, cflag, prot, sect;
 	int rc = ERR_OK;
 	int chip1;
+	ulong start;
 
 	/* first look for protection bits */
 
@@ -190,7 +191,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 		printf ("Erasing sector %2d ... ", sect);
 
 		/* arm simple, non interrupt dependent timer */
-		set_timer (0);
+		start = get_timer(0);
 
 		if (info->protect[sect] == 0) {	/* not protected */
 			volatile u16 *addr =
@@ -211,7 +212,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 				result = *addr;
 
 				/* check timeout */
-				if (get_timer (0) > CFG_FLASH_ERASE_TOUT) {
+				if (get_timer(start) > CONFIG_SYS_FLASH_ERASE_TOUT) {
 					MEM_FLASH_ADDR1 = CMD_READ_ARRAY;
 					chip1 = TMO;
 					break;
@@ -264,6 +265,7 @@ static int write_word (flash_info_t * info, ulong dest, ulong data)
 	int rc = ERR_OK;
 	int cflag, iflag;
 	int chip1;
+	ulong start;
 
 	/*
 	 * Check if Flash is (sufficiently) erased
@@ -291,7 +293,7 @@ static int write_word (flash_info_t * info, ulong dest, ulong data)
 	*addr = data;
 
 	/* arm simple, non interrupt dependent timer */
-	set_timer (0);
+	start = get_timer(0);
 
 	/* wait until flash is ready */
 	chip1 = 0;
@@ -299,7 +301,7 @@ static int write_word (flash_info_t * info, ulong dest, ulong data)
 		result = *addr;
 
 		/* check timeout */
-		if (get_timer (0) > CFG_FLASH_ERASE_TOUT) {
+		if (get_timer(start) > CONFIG_SYS_FLASH_ERASE_TOUT) {
 			chip1 = ERR | TMO;
 			break;
 		}

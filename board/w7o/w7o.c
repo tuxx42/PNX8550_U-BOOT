@@ -31,6 +31,7 @@
 #include <watchdog.h>
 
 unsigned long get_dram_size (void);
+void sdram_init(void);
 
 /*
  * Macros to transform values
@@ -63,16 +64,16 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5) Level One PHY; active low; level sensitive
 	 * IRQ 31 (EXT IRQ 6) SAM 1; active high; level sensitive
 	 */
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr (uicer, 0x00000000);	/* disable all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0ER, 0x00000000);	/* disable all ints */
 
-	mtdcr (uiccr, 0x00000000);	/* set all to be non-critical */
-	mtdcr (uicpr, 0xFFFFFF80);	/* set int polarities */
-	mtdcr (uictr, 0x10000000);	/* set int trigger levels */
-	mtdcr (uicvcr, 0x00000001);	/* set vect base=0,
+	mtdcr (UIC0CR, 0x00000000);	/* set all to be non-critical */
+	mtdcr (UIC0PR, 0xFFFFFF80);	/* set int polarities */
+	mtdcr (UIC0TR, 0x10000000);	/* set int trigger levels */
+	mtdcr (UIC0VCR, 0x00000001);	/* set vect base=0,
 					   INT0 highest priority */
 
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 
 #elif defined(CONFIG_W7OLMC)
 	/*
@@ -94,16 +95,16 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5) RCMM Reset; active low; level sensitive
 	 * IRQ 31 (EXT IRQ 6) PHY; active high; level sensitive
 	 */
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr (uicer, 0x00000000);	/* disable all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0ER, 0x00000000);	/* disable all ints */
 
-	mtdcr (uiccr, 0x00000000);	/* set all to be non-critical */
-	mtdcr (uicpr, 0xFFFFFF80);	/* set int polarities */
-	mtdcr (uictr, 0x10000000);	/* set int trigger levels */
-	mtdcr (uicvcr, 0x00000001);	/* set vect base=0,
+	mtdcr (UIC0CR, 0x00000000);	/* set all to be non-critical */
+	mtdcr (UIC0PR, 0xFFFFFF80);	/* set int polarities */
+	mtdcr (UIC0TR, 0x10000000);	/* set int trigger levels */
+	mtdcr (UIC0VCR, 0x00000001);	/* set vect base=0,
 					   INT0 highest priority */
 
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 
 #else  /* Unknown */
 #    error "Unknown W7O board configuration"
@@ -131,7 +132,7 @@ int checkboard (void)
 	puts ("Board: ");
 
 	/* VPD data present in I2C EEPROM */
-	if (vpd_get_data (CFG_DEF_EEPROM_ADDR, &vpd) == 0) {
+	if (vpd_get_data (CONFIG_SYS_DEF_EEPROM_ADDR, &vpd) == 0) {
 		/*
 		 * Known board type.
 		 */
@@ -151,8 +152,15 @@ int checkboard (void)
 
 /* ------------------------------------------------------------------------- */
 
-long int initdram (int board_type)
+phys_size_t initdram (int board_type)
 {
+	/*
+	 * ToDo: Move the asm init routine sdram_init() to this C file,
+	 * or even better use some common ppc4xx code available
+	 * in arch/powerpc/cpu/ppc4xx
+	 */
+	sdram_init();
+
 	return get_dram_size ();
 }
 
@@ -162,17 +170,17 @@ unsigned long get_dram_size (void)
 	int size = 0;
 
 	/* Get bank Size registers */
-	mtdcr (memcfga, mem_mb0cf);	/* get bank 0 config reg */
-	regs[0] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B0CR);	/* get bank 0 config reg */
+	regs[0] = mfdcr (SDRAM0_CFGDATA);
 
-	mtdcr (memcfga, mem_mb1cf);	/* get bank 1 config reg */
-	regs[1] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B1CR);	/* get bank 1 config reg */
+	regs[1] = mfdcr (SDRAM0_CFGDATA);
 
-	mtdcr (memcfga, mem_mb2cf);	/* get bank 2 config reg */
-	regs[2] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B2CR);	/* get bank 2 config reg */
+	regs[2] = mfdcr (SDRAM0_CFGDATA);
 
-	mtdcr (memcfga, mem_mb3cf);	/* get bank 3 config reg */
-	regs[3] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B3CR);	/* get bank 3 config reg */
+	regs[3] = mfdcr (SDRAM0_CFGDATA);
 
 	/* compute the size, add each bank if enabled */
 	for (i = 0; i < 4; i++) {
@@ -196,7 +204,7 @@ static void w7o_env_init (VPD * vpd)
 	/*
 	 * Read VPD
 	 */
-	if (vpd_get_data (CFG_DEF_EEPROM_ADDR, vpd) != 0)
+	if (vpd_get_data (CONFIG_SYS_DEF_EEPROM_ADDR, vpd) != 0)
 		return;
 
 	/*

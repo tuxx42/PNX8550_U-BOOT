@@ -27,23 +27,31 @@
 #include <common.h>
 #include <command.h>
 #include <rtc.h>
+#include <i2c.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if (CONFIG_COMMANDS & CFG_CMD_DATE)
-
-const char *weekdays[] = {
+static const char * const weekdays[] = {
 	"Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur",
 };
 
+#ifdef CONFIG_NEEDS_MANUAL_RELOC
 #define RELOC(a)	((typeof(a))((unsigned long)(a) + gd->reloc_off))
+#else
+#define RELOC(a)	a
+#endif
 
-int mk_date (char *, struct rtc_time *);
+int mk_date (const char *, struct rtc_time *);
 
-int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct rtc_time tm;
 	int rcode = 0;
+	int old_bus;
+
+	/* switch to correct I2C bus */
+	old_bus = I2C_GET_BUS();
+	I2C_SET_BUS(CONFIG_SYS_RTC_BUS_NUM);
 
 	switch (argc) {
 	case 2:			/* set date & time */
@@ -52,18 +60,30 @@ int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			rtc_reset ();
 		} else {
 			/* initialize tm with current time */
-			rtc_get (&tm);
-			/* insert new date & time */
-			if (mk_date (argv[1], &tm) != 0) {
-				puts ("## Bad date format\n");
-				return 1;
+			rcode = rtc_get (&tm);
+
+			if(!rcode) {
+				/* insert new date & time */
+				if (mk_date (argv[1], &tm) != 0) {
+					puts ("## Bad date format\n");
+					break;
+				}
+				/* and write to RTC */
+				rcode = rtc_set (&tm);
+				if(rcode)
+					puts("## Set date failed\n");
+			} else {
+				puts("## Get date failed\n");
 			}
-			/* and write to RTC */
-			rtc_set (&tm);
 		}
 		/* FALL TROUGH */
 	case 1:			/* get date & time */
-		rtc_get (&tm);
+		rcode = rtc_get (&tm);
+
+		if (rcode) {
+			puts("## Get date failed\n");
+			break;
+		}
 
 		printf ("Date: %4d-%02d-%02d (%sday)    Time: %2d:%02d:%02d\n",
 			tm.tm_year, tm.tm_mon, tm.tm_mday,
@@ -71,18 +91,22 @@ int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 				"unknown " : RELOC(weekdays[tm.tm_wday]),
 			tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-		return 0;
+		break;
 	default:
-		printf ("Usage:\n%s\n", cmdtp->usage);
+		cmd_usage(cmdtp);
 		rcode = 1;
 	}
+
+	/* switch back to original I2C bus */
+	I2C_SET_BUS(old_bus);
+
 	return rcode;
 }
 
 /*
  * simple conversion of two-digit string with error checking
  */
-static int cnvrt2 (char *str, int *valp)
+static int cnvrt2 (const char *str, int *valp)
 {
 	int val;
 
@@ -107,7 +131,7 @@ static int cnvrt2 (char *str, int *valp)
  * Some basic checking for valid values is done, but this will not catch
  * all possible error conditions.
  */
-int mk_date (char *datestr, struct rtc_time *tmp)
+int mk_date (const char *datestr, struct rtc_time *tmp)
 {
 	int len, val;
 	char *ptr;
@@ -194,11 +218,9 @@ int mk_date (char *datestr, struct rtc_time *tmp)
 
 U_BOOT_CMD(
 	date,	2,	1,	do_date,
-	"date    - get/set/reset date & time\n",
+	"get/set/reset date & time",
 	"[MMDDhhmm[[CC]YY][.ss]]\ndate reset\n"
 	"  - without arguments: print date & time\n"
 	"  - with numeric argument: set the system date & time\n"
-	"  - with 'reset' argument: reset the RTC\n"
+	"  - with 'reset' argument: reset the RTC"
 );
-
-#endif	/* CFG_CMD_DATE */
