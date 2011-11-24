@@ -148,6 +148,8 @@
  * Network configuration
  */
 #define CONFIG_NATSEMI
+#define CONFIG_MII
+#define CONFIG_NET_MULTI
 
 #define CONFIG_PREBOOT		"echo;echo Welcome to pollinux board v1.1;echo"
 #define CONFIG_IPADDR		192.168.123.15

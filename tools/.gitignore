@@ -3,6 +3,7 @@
 /gen_eth_addr
 /img2srec
 /mkimage
+/mkpollinux
 /mpc86x_clk
 /ncb
 /ncp
