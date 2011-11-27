@@ -57,7 +57,7 @@ int timer_init(void)
 ulong get_timer(ulong base)
 {
 	return (read_c0_count()/(CONFIG_SYS_MIPS_TIMER_FREQ/CONFIG_SYS_HZ)) - base;
-#if 0
+#ifndef CONFIG_MIPS_CPU_PR4450
 	unsigned int count;
 	unsigned int expirelo = read_c0_compare();
 
@@ -94,13 +94,20 @@ void __udelay(unsigned long usec)
 	while (read_c0_count() < endTicks)
 		; /* nop */
 
-#if 0
+#ifndef CONFIG_MIPS_CPU_PR4450
 	unsigned int tmo;
 
 	tmo = read_c0_count() + (usec * (CONFIG_SYS_MIPS_TIMER_FREQ / 1000000));
 	while ((tmo - read_c0_count()) < 0x7fffffff)
 		/*NOP*/;
 #endif
+}
+
+void reset_timer(void)
+{
+	/* Set up the timer for the first expiration. */
+	write_c0_count(0);
+	write_c0_compare(~0);
 }
 
 /*

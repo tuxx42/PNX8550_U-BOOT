@@ -70,37 +70,60 @@
  * Miscellaneous configurable options
  */
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory      */
-#define	CONFIG_SYS_PROMPT		"pollinux> "	/* Monitor Command Prompt    */
+#define	CONFIG_SYS_PROMPT		"# "	/* Monitor Command Prompt    */
 #define	CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS		16		/* max number of command args*/
 
-#define CONFIG_SYS_MALLOC_LEN		128*1024
-#define CONFIG_SYS_BOOTPARAMS_LEN	128*1024
+#define CONFIG_SYS_MALLOC_LEN		(1024*1024)
+
+#define CONFIG_SYS_BOOTPARAMS_LEN	(128*1024)
 
 #define CONFIG_SYS_MIPS_TIMER_FREQ	250000000
-#define CONFIG_SYS_HZ			1000
-#define CONF_SLOWDOWN_IO
+#define CONFIG_SYS_HZ				1000
 
 #define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_TEXT_BASE
-#define CONFIG_SYS_MONITOR_LEN		(192 << 10)	/* No more than 192KiB */
+#define CONFIG_SYS_MONITOR_LEN		(192 << 10)		/* No more then 192KiB */
+#define CONFIG_ENV_ADDR				0xA0000000
 
-#define CONFIG_SYS_INIT_SP_OFFSET	0x400000
+#define CONFIG_SYS_INIT_SP_OFFSET	0x00400000
 
 #define CONFIG_SYS_SDRAM_BASE		0x80000000	/* Cached addr */
 #define	CONFIG_SYS_LOAD_ADDR		0x82000000	/* default load address	*/
-#define CONFIG_SYS_MEMTEST_START	0x80100000
-#define CONFIG_SYS_MEMTEST_END		0x80800000
+#define CONFIG_SYS_MEMTEST_START	0x80000000
+#define CONFIG_SYS_MEMTEST_END		0x80000000
+
+#define DEBUG
 
 /*-----------------------------------------------------------------------
  * Flash and environment organization
  */
-#define CONFIG_SYS_NO_FLASH
+#define CONFIG_NAND_PNX8550
+#define CONFIG_NAND_DETECT
+#define CONFIG_NAND_WINCE_ECC
 
-#define	CONFIG_ENV_IS_NOWHERE	1
-/* Address and size of Primary Environment Sector	*/
-#define CONFIG_ENV_ADDR		0xB0030000
-#define CONFIG_ENV_SIZE		0x10000
+#define CONFIG_MTD_DEVICE
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_MTD_DEBUG
+#define CONFIG_MTD_DEBUG_VERBOSE MTD_DEBUG_LEVEL0
+
+#define MTDIDS_DEFAULT		"nand0=nxp-0"
+#define MTDPARTS_DEFAULT	"mtdparts=nxp-0:16k(microBTM)ro,512k(U-Boot),16k(Env1),16k(Env2),5M(Linux),54M(ROMFS),464k(Filler)ro,4080k(WinCE)ro,16k(info)ro"
+
+#define CONFIG_SYS_MAX_NAND_DEVICE 1
+#define CONFIG_SYS_NAND_BASE 0x00000000
+
+#define CONFIG_SYS_NO_FLASH
+//#define	CONFIG_ENV_IS_IN_NAND	1
+#define CONFIG_ENV_IS_NOWHERE	1
+
+/*
+#define CONFIG_ENV_OFFSET			0x84000
+#define CONFIG_ENV_ADDR				CONFIG_ENV_OFFSET
+#define CONFIG_ENV_OFFSET_REDUND	0x88000
+#define CONFIG_SYS_ENV_SECT_SIZE	0x04000			// 16 KB
+*/
+#define CONFIG_ENV_SIZE				0x01000			// 4KB
 
 
 /*-----------------------------------------------------------------------
@@ -156,8 +179,8 @@
 #define CONFIG_ETHADDR		00:00:00:00:00:00
 #define CONFIG_SERVERIP		192.168.123.16
 #define CONFIG_NETMASK		255.255.255.0
-#define CONFIG_HOSTNAME		"pollinux"
-#define CONFIG_BOOTFILE		"/pollinux/nandfs/boot/uImage"	/* File to boot */
+#define CONFIG_HOSTNAME		pollinux
+#define CONFIG_BOOTFILE		/pollinux/nandfs/boot/uImage	/* File to boot */
 
 /*-----------------------------------------------------------------------
  * I2C Configuration
@@ -190,12 +213,15 @@
 #define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_PCI
+/* NAND Stuff */
+#define CONFIG_CMD_NAND
+#define CONFIG_CMD_MTDPARTS
+#undef CONFIG_CMD_SAVEENV
 /* SATA stuff */
 #define CONFIG_CMD_SATA
 #define CONFIG_CMD_EXT2
 
 #undef CONFIG_CMD_FPGA
-#undef CONFIG_CMD_SAVEENV
 #undef CONFIG_CMD_FLASH
 #undef CONFIG_CMD_IDE
 #undef CONFIG_CMD_LOADS

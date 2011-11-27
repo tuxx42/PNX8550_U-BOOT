@@ -26,7 +26,8 @@ include $(TOPDIR)/config.mk
 ELF-$(ARCH)  :=
 ELF-$(BOARD) :=
 ELF-$(CPU)   :=
-ELF-y        := hello_world
+#ELF-y        := hello_world
+ELF-y        :=
 
 ELF-$(CONFIG_SMC91111)           += smc91111_eeprom
 ELF-$(CONFIG_SMC911X)            += smc911x_eeprom

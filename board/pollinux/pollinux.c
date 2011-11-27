@@ -23,12 +23,13 @@
 
 #include <common.h>
 #include <command.h>
-#include <asm/pnx8550.h>
 #include <asm/mipsregs.h>
 #include <asm/io.h>
 #include <pci.h>
-#include <nxp_pcixio_ipa051.h>
-#include <nxp_global2_ip0128.h>
+#include <asm/mach-pnx8550/pnx8550.h>
+#include <asm/mach-pnx8550/int.h>
+#include <asm/mach-pnx8550/nxp_pcixio_ipa051.h>
+#include <asm/mach-pnx8550/nxp_global2_ip0128.h>
 #include <netdev.h>
 
 phys_size_t initdram(int board_type)
@@ -49,13 +50,11 @@ void pci_init_board (void)
 
 void _machine_restart(void)
 {
-        printf ("\n\n"
-        	"*******************************************\n"
-        	"************* Machine restart *************\n"
-        	"*******************************************\n\n");
-
+        printf ("************* Machine restart *************\n");
         writel(PNX8550_RST_DO_SW_RST, PNX8550_RST_CTL);
 }
+
+extern void disable_pic(void);
 
 int checkboard (void)
 {
@@ -63,6 +62,8 @@ int checkboard (void)
 	int mem_size = initdram(0) / (1024 * 1024);
 	int pci_mem_code;
 	
+	disable_pic();
+
 	/* clear global 2 register */
 	writel(0, IP0128);
 

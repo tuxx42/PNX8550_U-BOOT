@@ -30,8 +30,8 @@
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/pnx8550.h>
-#include <nxp_serial_ip0107.h>
+#include <asm/mach-pnx8550/pnx8550.h>
+#include <asm/mach-pnx8550/nxp_serial_ip0107.h>
 
 /******************************************************************************
 *

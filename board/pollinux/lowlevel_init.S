@@ -23,8 +23,8 @@
 
 #include <config.h>
 #include <asm/regdef.h>
-#include <asm/pnx8550.h>
 #include <asm/mipsregs.h>
+#include <asm/mach-pnx8550/pnx8550.h>
 
 /*
  * This HUGE macro is a compile-time implementation of the LOG2 algorythm

@@ -25,10 +25,10 @@
 
 #include <common.h>
 #include <pci.h>
-#include <asm/pnx8550.h>
-#include <nxp_pcixio_ipa051.h>
 #include <asm/io.h>
 #include <asm/addrspace.h>
+#include <asm/mach-pnx8550/pnx8550.h>
+#include <asm/mach-pnx8550/nxp_pcixio_ipa051.h>
 
 static inline void nxp_ipa051_pci_clear_status( void )
 {
