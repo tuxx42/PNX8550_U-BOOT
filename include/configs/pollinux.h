@@ -32,7 +32,7 @@
 #define CONFIG_MIPS_CPU_PR4450	1	/* Philips PR4450 implementation */
 #define CONFIG_SYS_MIPS_CACHE_MODE CONF_CM_UNCACHED	/* run uncached, slow as hell, but natsemi breaks otherwise */
 
-#define CONFIG_BOOTDELAY	2	/* autoboot after 2 seconds	*/
+#define CONFIG_BOOTDELAY	-1	/* autoboot after 2 seconds	*/
 
 #define CONFIG_BAUDRATE		38400
 
@@ -84,7 +84,7 @@
 
 #define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_MONITOR_LEN		(192 << 10)		/* No more then 192KiB */
-#define CONFIG_ENV_ADDR				0xA0000000
+#define CONFIG_ENV_ADDR				0x80004000
 
 #define CONFIG_SYS_INIT_SP_OFFSET	0x00400000
 
@@ -108,21 +108,28 @@
 #define CONFIG_MTD_DEBUG_VERBOSE MTD_DEBUG_LEVEL0
 
 #define MTDIDS_DEFAULT		"nand0=nxp-0"
-#define MTDPARTS_DEFAULT	"mtdparts=nxp-0:16k(microBTM)ro,512k(U-Boot),16k(Env1),16k(Env2),5M(Linux),54M(ROMFS),464k(Filler)ro,4080k(WinCE)ro,16k(info)ro"
+#define MTDPARTS_DEFAULT	"mtdparts=nxp-0:" 		\
+								"16k(microBTM)ro,"	\
+								"512k(U-Boot),"		\
+								"16k(Env1),"		\
+								"16k(Env2),"		\
+								"5M(Linux),"		\
+								"54M(ROMFS),"		\
+								"464k(Filler)ro,"	\
+								"4080k(WinCE)ro,"	\
+								"16k(info)ro"		\
+								""
 
 #define CONFIG_SYS_MAX_NAND_DEVICE 1
-#define CONFIG_SYS_NAND_BASE 0x00000000
+#define CONFIG_SYS_NAND_BASE 0xB0000000
 
 #define CONFIG_SYS_NO_FLASH
-//#define	CONFIG_ENV_IS_IN_NAND	1
-#define CONFIG_ENV_IS_NOWHERE	1
+#define	CONFIG_ENV_IS_IN_NAND	1
+//#define CONFIG_ENV_IS_NOWHERE	1
 
-/*
 #define CONFIG_ENV_OFFSET			0x84000
-#define CONFIG_ENV_ADDR				CONFIG_ENV_OFFSET
 #define CONFIG_ENV_OFFSET_REDUND	0x88000
 #define CONFIG_SYS_ENV_SECT_SIZE	0x04000			// 16 KB
-*/
 #define CONFIG_ENV_SIZE				0x01000			// 4KB
 
 
@@ -211,15 +218,15 @@
 
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_MII
-#define CONFIG_CMD_PING
+//#define CONFIG_CMD_PING
 #define CONFIG_CMD_PCI
 /* NAND Stuff */
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_MTDPARTS
-#undef CONFIG_CMD_SAVEENV
+#define CONFIG_CMD_SAVEENV
 /* SATA stuff */
-#define CONFIG_CMD_SATA
-#define CONFIG_CMD_EXT2
+//#define CONFIG_CMD_SATA
+//#define CONFIG_CMD_EXT2
 
 #undef CONFIG_CMD_FPGA
 #undef CONFIG_CMD_FLASH
