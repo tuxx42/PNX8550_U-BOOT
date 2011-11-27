@@ -153,7 +153,7 @@ static int is64mb = 0;
 static struct nand_ecclayout nand8bit_oob_wince = {
     .eccbytes = 6,
     .eccpos = {8, 9, 10, 11, 12, 13},
-    .oobfree = { {0, 8}, {14, 2} },
+    .oobfree = { {0, 8} },
 };
 
 static u_char eccArray[] = {
@@ -1020,6 +1020,14 @@ static void pnx8550_nand_ecc_hwctrl(struct mtd_info *mtdinfo, int mode)
 	//do nothing
 }
 
+static inline int is_buf_blank(uint8_t *buf, size_t len)
+{
+	for (; len > 0; len--)
+		if (*buf++ != 0xff)
+			return 0;
+	return 1;
+}
+
 /**
  * pnx8550_nand_correct_data - [NAND Interface] Detect and correct bit error(s)
  * @mtd:	MTD block structure
@@ -1044,6 +1052,11 @@ int pnx8550_nand_correct_data(struct mtd_info *mtd, u_char *dat, u_char *read_ec
 	s2 = calc_ecc[2] ^ read_ecc[2];
 #endif
 	if ((s0 | s1 | s2) == 0)
+		return 0;
+	
+	// ignore ECC code of empty pages since they don't match the oob data
+	// oob: FF FF FF	ecc: 00 00 C0
+	if(is_buf_blank(dat, 256))
 		return 0;
 
 	ERROR( "exp: %02x %02x %02x got: %02x %02x %02x",
