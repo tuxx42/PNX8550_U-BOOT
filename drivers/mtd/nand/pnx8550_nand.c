@@ -148,6 +148,35 @@ static int is16bit = 0;
 */
 static int is64mb = 0;
 
+/* bad block descriptor located in the "middle" of the flash
+ *  this is pretty evil, but since the end is used by the microBTM we don't
+ *  have a real choice here
+ */
+#ifdef CONFIG_NAND_BBT
+
+static u8 bbt_pattern[] = {'B', 'b', 't', '0' };
+static u8 mirror_pattern[] = {'1', 't', 'b', 'B' };
+
+static struct nand_bbt_descr nand_main_bbt_decr = {
+    .options = NAND_BBT_ABSPAGE | NAND_BBT_CREATE | NAND_BBT_WRITE |
+			NAND_BBT_2BIT | NAND_BBT_VERSION,
+	.pages[0] = 0x460,
+    .offs = 0,
+    .len = 4,
+    .pattern = bbt_pattern
+};
+
+static struct nand_bbt_descr nand_mirror_bbt_decr = {
+    .options = NAND_BBT_ABSPAGE | NAND_BBT_CREATE | NAND_BBT_WRITE |
+			NAND_BBT_2BIT | NAND_BBT_VERSION,
+	.pages[0] = 0x480,
+    .offs = 0,
+    .len = 4,
+    .pattern = mirror_pattern
+};
+
+#endif
+
 #ifdef CONFIG_NAND_WINCE_ECC
 // wince oob placement
 static struct nand_ecclayout nand8bit_oob_wince = {
@@ -1203,6 +1232,12 @@ int board_nand_init(struct nand_chip *nand)
     this->ecc.write_page = pnx8550_nand_write_page_swecc;
 #else
     this->ecc.mode     = NAND_ECC_SOFT;
+#endif
+
+#ifdef CONFIG_NAND_BBT
+    this->options = NAND_USE_FLASH_BBT;
+    this->bbt_td  = &nand_main_bbt_decr;
+    this->bbt_md  = &nand_mirror_bbt_decr;
 #endif
 
     return 0;

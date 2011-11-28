@@ -93,14 +93,13 @@
 #define CONFIG_SYS_MEMTEST_START	0x80000000
 #define CONFIG_SYS_MEMTEST_END		0x80000000
 
-#define DEBUG
-
 /*-----------------------------------------------------------------------
  * Flash and environment organization
  */
 #define CONFIG_NAND_PNX8550
 #define CONFIG_NAND_DETECT
 #define CONFIG_NAND_WINCE_ECC
+#define CONFIG_NAND_BBT
 
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
@@ -111,11 +110,11 @@
 #define MTDPARTS_DEFAULT	"mtdparts=nxp-0:" 		\
 								"16k(microBTM)ro,"	\
 								"512k(U-Boot),"		\
-								"16k(Env1),"		\
-								"16k(Env2),"		\
+								"32k(Env),"			\
+								"32k(bbt),"			\
 								"5M(Linux),"		\
 								"54M(ROMFS),"		\
-								"464k(Filler)ro,"	\
+								"432k(Filler)ro,"	\
 								"4080k(WinCE)ro,"	\
 								"16k(info)ro"		\
 								""
@@ -127,8 +126,8 @@
 #define	CONFIG_ENV_IS_IN_NAND	1
 //#define CONFIG_ENV_IS_NOWHERE	1
 
-#define CONFIG_ENV_OFFSET			0x84000
-#define CONFIG_ENV_OFFSET_REDUND	0x88000
+#define CONFIG_ENV_OFFSET			0x84000			// Env1 offset
+#define CONFIG_ENV_OFFSET_REDUND	0x88000			// Env2 offset
 #define CONFIG_SYS_ENV_SECT_SIZE	0x04000			// 16 KB
 #define CONFIG_ENV_SIZE				0x01000			// 4KB
 
