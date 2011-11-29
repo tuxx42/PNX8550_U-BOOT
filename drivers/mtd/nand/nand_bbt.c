@@ -300,6 +300,7 @@ static int read_abs_bbts(struct mtd_info *mtd, uint8_t *buf,
 		printk(KERN_DEBUG "Bad block table at page %d, version 0x%02X\n",
 		       md->pages[0], md->version[0]);
 	}
+
 	return 1;
 }
 
@@ -796,7 +797,8 @@ static int check_create(struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_desc
 		chipsel = (td->options & NAND_BBT_PERCHIP) ? i : -1;
 		/* Mirrored table avilable ? */
 		if (md) {
-			if (td->pages[i] == -1 && md->pages[i] == -1) {
+			if ((td->pages[i] == -1 && md->pages[i] == -1) ||
+				(td->version[i] == 0xFF && md->version[i] == 0xFF)) {
 				writeops = 0x03;
 				goto create;
 			}
@@ -835,7 +837,7 @@ static int check_create(struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_desc
 			goto writecheck;
 
 		} else {
-			if (td->pages[i] == -1) {
+			if (td->pages[i] == -1 || td->version[i] == 0xFF) {
 				writeops = 0x01;
 				goto create;
 			}

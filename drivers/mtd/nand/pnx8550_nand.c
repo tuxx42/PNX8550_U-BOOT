@@ -161,7 +161,7 @@ static struct nand_bbt_descr nand_main_bbt_decr = {
     .options = NAND_BBT_ABSPAGE | NAND_BBT_CREATE | NAND_BBT_WRITE |
 			NAND_BBT_2BIT | NAND_BBT_VERSION,
 	.pages[0] = 0x460,
-    .offs = 0,
+    .offs = 1,
     .len = 4,
     .pattern = bbt_pattern
 };
@@ -170,7 +170,7 @@ static struct nand_bbt_descr nand_mirror_bbt_decr = {
     .options = NAND_BBT_ABSPAGE | NAND_BBT_CREATE | NAND_BBT_WRITE |
 			NAND_BBT_2BIT | NAND_BBT_VERSION,
 	.pages[0] = 0x480,
-    .offs = 0,
+    .offs = 1,
     .len = 4,
     .pattern = mirror_pattern
 };
