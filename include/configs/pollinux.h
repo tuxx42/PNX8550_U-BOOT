@@ -217,7 +217,7 @@
 
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_MII
-//#define CONFIG_CMD_PING
+#define CONFIG_CMD_PING
 #define CONFIG_CMD_PCI
 /* NAND Stuff */
 #define CONFIG_CMD_NAND
