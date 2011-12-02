@@ -32,7 +32,11 @@
 #define CONFIG_MIPS_CPU_PR4450	1	/* Philips PR4450 implementation */
 #define CONFIG_SYS_MIPS_CACHE_MODE CONF_CM_UNCACHED	/* run uncached, slow as hell, but natsemi breaks otherwise */
 
-#define CONFIG_BOOTDELAY	-1	/* autoboot after 2 seconds	*/
+#ifdef CONFIG_POLLINUX_FLASHER
+#  define CONFIG_BOOTDELAY	-1	/* autoboot after 2 seconds	*/
+#else
+#  define CONFIG_BOOTDELAY 2
+#endif
 
 #define CONFIG_BAUDRATE		38400
 
@@ -47,7 +51,8 @@
 	"nomainapp=1 "			\
 	""
 
-#define	CONFIG_EXTRA_ENV_SETTINGS						\
+#ifndef CONFIG_POLLINUX_FLASHER
+#  define	CONFIG_EXTRA_ENV_SETTINGS					\
 	"la=80100000\0"								\
 	"ld=loadb $(la);sleep 5;go $(la)\0"					\
 	"rootpath=/pollinux/nandfs\0"						\
@@ -62,15 +67,25 @@
 	"ideboot=sata init;ext2load sata 0:1 $(loadaddr) $(bootfile);"		\
 		"run ideargs addip;bootm\0"					\
 	""
+#else
+#  define CONFIG_EXTRA_ENV_SETTINGS					\
+	"loadaddr=0x82000000\0"							\
+	""
+#endif
 
 /* Boot from NFS root */
-#define CONFIG_BOOTCOMMAND	"run nfsboot"
+#  define CONFIG_BOOTCOMMAND	"run nfsboot"
 
 /*-----------------------------------------------------------------------
  * Miscellaneous configurable options
  */
-#define	CONFIG_SYS_LONGHELP				/* undef to save memory      */
-#define	CONFIG_SYS_PROMPT		"# "	/* Monitor Command Prompt    */
+#ifdef CONFIG_POLLINUX_FLASHER
+#  undef CONFIG_SYS_LONGHELP
+#  define CONFIG_SYS_PROMPT		"flasher# "
+#else
+#  define CONFIG_SYS_LONGHELP				/* undef to save memory      */
+#  define CONFIG_SYS_PROMPT		"# "	/* Monitor Command Prompt    */
+#endif
 #define	CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS		16		/* max number of command args*/
@@ -91,7 +106,7 @@
 #define CONFIG_SYS_SDRAM_BASE		0x80000000	/* Cached addr */
 #define	CONFIG_SYS_LOAD_ADDR		0x82000000	/* default load address	*/
 #define CONFIG_SYS_MEMTEST_START	0x80000000
-#define CONFIG_SYS_MEMTEST_END		0x80000000
+#define CONFIG_SYS_MEMTEST_END		0x87000000
 
 /*-----------------------------------------------------------------------
  * Flash and environment organization
@@ -112,8 +127,8 @@
 								"512k(U-Boot),"		\
 								"32k(Env),"			\
 								"32k(bbt),"			\
-								"5M(Linux),"		\
-								"54M(ROMFS),"		\
+								"9M(Linux),"		\
+								"50M(ROMFS),"		\
 								"432k(Filler)ro,"	\
 								"4080k(WinCE)ro,"	\
 								"16k(info)ro"		\
@@ -123,9 +138,7 @@
 #define CONFIG_SYS_NAND_BASE 0xB0000000
 
 #define CONFIG_SYS_NO_FLASH
-#define	CONFIG_ENV_IS_IN_NAND	1
-//#define CONFIG_ENV_IS_NOWHERE	1
-
+#define CONFIG_ENV_IS_IN_NAND	1
 #define CONFIG_ENV_OFFSET			0x84000			// Env1 offset
 #define CONFIG_ENV_OFFSET_REDUND	0x88000			// Env2 offset
 #define CONFIG_SYS_ENV_SECT_SIZE	0x04000			// 16 KB
@@ -167,26 +180,30 @@
 /*-----------------------------------------------------------------------
  * SATA configuration
  */
-#define CONFIG_SATA_SIL3512
-#define CONFIG_SYS_SATA_MAX_DEVICE	2
-#define CONFIG_LIBATA
-#define CONFIG_LBA48
-#define CONFIG_DOS_PARTITION
+#ifndef CONFIG_POLLINUX_FLASHER
+#  define CONFIG_SATA_SIL3512
+#  define CONFIG_SYS_SATA_MAX_DEVICE	2
+#  define CONFIG_LIBATA
+#  define CONFIG_LBA48
+#  define CONFIG_DOS_PARTITION
+#endif
 
 /*-----------------------------------------------------------------------
  * Network configuration
  */
-#define CONFIG_NATSEMI
-#define CONFIG_MII
-#define CONFIG_NET_MULTI
+#ifndef CONFIG_POLLINUX_FLASHER
+#  define CONFIG_NATSEMI
+#  define CONFIG_MII
+#  define CONFIG_NET_MULTI
 
-#define CONFIG_PREBOOT		"echo;echo Welcome to pollinux board v1.1;echo"
-#define CONFIG_IPADDR		192.168.123.15
-#define CONFIG_ETHADDR		00:00:00:00:00:00
-#define CONFIG_SERVERIP		192.168.123.16
-#define CONFIG_NETMASK		255.255.255.0
-#define CONFIG_HOSTNAME		pollinux
-#define CONFIG_BOOTFILE		/pollinux/nandfs/boot/uImage	/* File to boot */
+#  define CONFIG_PREBOOT	"echo;echo Welcome to the pollinux board v1.1;echo"
+#  define CONFIG_IPADDR		192.168.123.15
+#  define CONFIG_ETHADDR		00:00:00:00:00:00
+#  define CONFIG_SERVERIP		192.168.123.16
+#  define CONFIG_NETMASK		255.255.255.0
+#  define CONFIG_HOSTNAME		pollinux
+#  define CONFIG_BOOTFILE		/pollinux/nandfs/boot/uImage	/* File to boot */
+#endif
 
 /*-----------------------------------------------------------------------
  * I2C Configuration
@@ -213,23 +230,32 @@
 /*-----------------------------------------------------------------------
  * Command line configuration.
  */
-#include <config_cmd_default.h>
-
-#define CONFIG_CMD_ELF
-#define CONFIG_CMD_MII
-#define CONFIG_CMD_PING
-#define CONFIG_CMD_PCI
+#ifndef CONFIG_POLLINUX_FLASHER
+#  include <config_cmd_default.h>
+#  define CONFIG_CMD_ELF
+#  define CONFIG_CMD_MII
+#  define CONFIG_CMD_PING
+#  define CONFIG_CMD_PCI
 /* NAND Stuff */
-#define CONFIG_CMD_NAND
-#define CONFIG_CMD_MTDPARTS
-#define CONFIG_CMD_SAVEENV
+#  define CONFIG_CMD_NAND
+#  define CONFIG_CMD_MTDPARTS
+#  define CONFIG_CMD_SAVEENV
 /* SATA stuff */
-//#define CONFIG_CMD_SATA
-//#define CONFIG_CMD_EXT2
+#  define CONFIG_CMD_SATA
+#  define CONFIG_CMD_EXT2
+#else
+#  define CONFIG_CMD_EDITENV
+#  define CONFIG_CMD_LOADB
+#  define CONFIG_CMD_MTDPARTS
+#  define CONFIG_CMD_NAND
+#  define CONFIG_CMD_PCI
+#  define CONFIG_CMD_SAVEENV
+#endif
 
 #undef CONFIG_CMD_FPGA
 #undef CONFIG_CMD_FLASH
 #undef CONFIG_CMD_IDE
-#undef CONFIG_CMD_LOADS
+#undef CONFIG_CMD_SETGETDCR
+#undef CONFIG_CMD_XIMG
 
 #endif	/* __CONFIG_H */
