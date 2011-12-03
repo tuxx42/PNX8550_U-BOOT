@@ -111,7 +111,7 @@ static void linux_params_init (ulong start, char *line)
 
 	linux_argc = 1;
 	linux_argv = (char **) start;
-	linux_argv[0] = 0;
+	linux_argv[0] = "";
 	argp = (char *) (linux_argv + LINUX_MAX_ARGS);
 
 	next = line;
