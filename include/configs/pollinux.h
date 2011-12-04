@@ -74,21 +74,21 @@
 #endif
 
 /* Boot from NFS root */
-#  define CONFIG_BOOTCOMMAND	"run nfsboot"
+#define CONFIG_BOOTCOMMAND	"run nfsboot"
 
 /*-----------------------------------------------------------------------
  * Miscellaneous configurable options
  */
 #ifdef CONFIG_POLLINUX_FLASHER
 #  undef CONFIG_SYS_LONGHELP
-#  define CONFIG_SYS_PROMPT		"flasher# "
+#  define CONFIG_SYS_PROMPT			"flasher# "
 #else
 #  define CONFIG_SYS_LONGHELP				/* undef to save memory      */
-#  define CONFIG_SYS_PROMPT		"# "	/* Monitor Command Prompt    */
+#  define CONFIG_SYS_PROMPT			"# "	/* Monitor Command Prompt    */
 #endif
-#define	CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size   */
+#define	CONFIG_SYS_CBSIZE			256		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
-#define	CONFIG_SYS_MAXARGS		16		/* max number of command args*/
+#define	CONFIG_SYS_MAXARGS			16		/* max number of command args*/
 
 #define CONFIG_SYS_MALLOC_LEN		(1024*1024)
 
@@ -134,11 +134,11 @@
 								"16k(info)ro"		\
 								""
 
-#define CONFIG_SYS_MAX_NAND_DEVICE 1
-#define CONFIG_SYS_NAND_BASE 0xB0000000
+#define CONFIG_SYS_MAX_NAND_DEVICE	1
+#define CONFIG_SYS_NAND_BASE		0xB0000000
 
 #define CONFIG_SYS_NO_FLASH
-#define CONFIG_ENV_IS_IN_NAND	1
+#define CONFIG_ENV_IS_IN_NAND		1
 #define CONFIG_ENV_OFFSET			0x84000			// Env1 offset
 #define CONFIG_ENV_OFFSET_REDUND	0x88000			// Env2 offset
 #define CONFIG_SYS_ENV_SECT_SIZE	0x04000			// 16 KB

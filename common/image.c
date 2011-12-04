@@ -113,6 +113,7 @@ static const table_entry_t uimage_os[] = {
 #if defined(CONFIG_INTEGRITY) || defined(USE_HOSTCC)
 	{	IH_OS_INTEGRITY,"integrity",	"INTEGRITY",		},
 #endif
+	{	IH_OS_PHILIPS,"elecard",	"Elecard Linux",		},
 #ifdef USE_HOSTCC
 	{	IH_OS_4_4BSD,	"4_4bsd",	"4_4BSD",		},
 	{	IH_OS_DELL,	"dell",		"Dell",			},

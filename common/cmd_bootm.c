@@ -130,6 +130,7 @@ int do_bootelf (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 #if defined(CONFIG_INTEGRITY)
 static boot_os_fn do_bootm_integrity;
 #endif
+extern boot_os_fn do_bootm_philips_linux;
 
 static boot_os_fn *boot_os[] = {
 #ifdef CONFIG_BOOTM_LINUX
@@ -154,6 +155,7 @@ static boot_os_fn *boot_os[] = {
 #ifdef CONFIG_INTEGRITY
 	[IH_OS_INTEGRITY] = do_bootm_integrity,
 #endif
+	[IH_OS_PHILIPS] = do_bootm_philips_linux,
 };
 
 static bootm_headers_t images;		/* pointers to os/initrd/fdt images */
