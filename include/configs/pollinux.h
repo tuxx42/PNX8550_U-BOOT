@@ -86,6 +86,7 @@
 #  define CONFIG_SYS_LONGHELP				/* undef to save memory      */
 #  define CONFIG_SYS_PROMPT			"# "	/* Monitor Command Prompt    */
 #endif
+#define CONFIG_CMDLINE_EDITING			1
 #define	CONFIG_SYS_CBSIZE			256		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS			16		/* max number of command args*/
@@ -121,6 +122,7 @@
 #define CONFIG_MTD_DEBUG
 #define CONFIG_MTD_DEBUG_VERBOSE MTD_DEBUG_LEVEL0
 
+/* MTD partitions (not usable with the elecard kernel */
 #define MTDIDS_DEFAULT		"nand0=nxp-0"
 #define MTDPARTS_DEFAULT	"mtdparts=nxp-0:" 		\
 								"16k(microBTM)ro,"	\
@@ -129,10 +131,15 @@
 								"32k(bbt),"			\
 								"9M(Linux),"		\
 								"50M(ROMFS),"		\
-								"432k(Filler)ro,"	\
-								"4080k(WinCE)ro,"	\
+								"4080k@0x3c00000(WinCE)ro,"	\
 								"16k(info)ro"		\
 								""
+
+/* JFFS2 */
+#define CONFIG_JFFS2_NAND			1
+#define NAND_CACHE_PAGES			16
+#define CONFIG_JFFS2_PART_SIZE			0x03300000
+#define CONFIG_JFFS2_PART_OFFSET		0x00894000
 
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		0xB0000000
@@ -238,6 +245,8 @@
 #  define CONFIG_CMD_PCI
 /* NAND Stuff */
 #  define CONFIG_CMD_NAND
+#  define CONFIG_CMD_NAND_TRIMFFS
+#  define CONFIG_CMD_JFFS2
 #  define CONFIG_CMD_MTDPARTS
 #  define CONFIG_CMD_SAVEENV
 /* SATA stuff */

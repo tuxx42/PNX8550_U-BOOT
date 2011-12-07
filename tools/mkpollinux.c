@@ -33,7 +33,7 @@
 #define NEXT_EBLOCK(a) ERASEBLOCK-(a)%ERASEBLOCK
 
 static const char* header_wceo0 = "0ECW";
-static const uint32_t header_const1 = 0x0003FE00;
+static const uint32_t header_size = 0x00080000;
 static const uint32_t header_const2 = 0x00100000;
 
 int create_pollinux_load(char *source_file, char *dest_file)
@@ -56,11 +56,11 @@ int create_pollinux_load(char *source_file, char *dest_file)
 	
 	/* construct file header */
 	fwrite(header_wceo0, strlen(header_wceo0), 1, dst);
-	fwrite(&header_const1, sizeof(header_const1), 1, dst);
+	fwrite(&header_size, sizeof(header_size), 1, dst);
 	fwrite(header_wceo0, strlen(header_wceo0), 1, dst);
 	fwrite(&header_const2, sizeof(header_const2), 1, dst);
 	
-	offset += 2 * strlen(header_wceo0) + sizeof(header_const1) + sizeof(header_const2);
+	offset += 2 * strlen(header_wceo0) + sizeof(header_size) + sizeof(header_const2);
 	
 	printf("Header written, moving offset: %d -> %d\n", offset, offset + NEXT_BLOCK(offset));
 	offset += NEXT_BLOCK(offset);
