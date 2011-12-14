@@ -125,7 +125,7 @@
 /* MTD partitions (not usable with the elecard kernel */
 #define MTDIDS_DEFAULT		"nand0=nxp-0"
 #define MTDPARTS_DEFAULT	"mtdparts=nxp-0:" 		\
-								"16k(microBTM)ro,"	\
+								"16k(FlashReader)ro,"	\
 								"512k(U-Boot),"		\
 								"32k(Env),"			\
 								"32k(bbt),"			\
